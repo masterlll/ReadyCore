@@ -1,0 +1,2 @@
+# RedigoCore
+go redis EFcore
