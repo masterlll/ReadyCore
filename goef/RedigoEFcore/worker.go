@@ -21,7 +21,6 @@ type work struct {
 func (p *work) constructor() *work {
 	return p
 }
-
 func (p *work) Value() EF.Container {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -113,41 +112,164 @@ func (p *work) Pipe(DBnumber int) *convent {
 	return &a
 }
 
-// func (p *work) Queue() string {
+func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
+	rd := db.DbContext{}
 
-// 	if p.hashInput.Input != nil {
+	p.lock.Lock()
 
-// 		for _, i := range p.hashInput.Input {
-// 			fmt.Println("DO", i)
-// 			return "DO" + i.(string)
-// 		}
-// 	}
-// 	if p.setInput.Input != nil {
-// 		for _, i := range p.setInput.Input {
-// 			return "DO" + i.(string)
-// 		}
-// 	}
+	if p.hashInput.Input != nil {
+		ch := make(chan *convent)
+		var input []EF.Container
+		input = append(input, p.hashInput)
+		input = append(input, twice)
+		ok := make(chan bool)
+		go func() {
+			for i := range rd.PipeTwice(DBnumber, input) {
+				a := p.convent.constructor()
+				a.value = i
 
-// 	if p.listInput.Input != nil {
+				ch <- &a
 
-// 		for _, i := range p.listInput.Input {
-// 			fmt.Println(i)
-// 			return "DO" + i.(string)
+			}
+			ok <- true
+		}()
+		go func() {
+			<-ok
+			close(ch)
+		}()
 
-// 		}
+		defer p.lock.Unlock()
+		return ch
+	}
+	if p.setInput.Input != nil {
 
-// 	}
-// 	if p.keyInput.Input != nil {
+		ch := make(chan *convent)
+		var input []EF.Container
+		input = append(input, p.setInput)
+		input = append(input, twice)
+		ok := make(chan bool)
+		go func() {
+			for i := range rd.PipeTwice(DBnumber, input) {
+				a := p.convent.constructor()
+				a.value = i
+				ch <- &a
 
-// 		for _, i := range p.keyInput.Input {
-// 			fmt.Println(i)
-// 			return "DO" + i.(string)
-// 		}
-// 	}
-// 	return "no found "
-// }
+			}
+			ok <- true
+		}()
+		go func() {
+			<-ok
+			close(ch)
+		}()
+		defer p.lock.Unlock()
+		return ch
+	}
 
-/////////
+	if p.listInput.Input != nil {
+
+		ch := make(chan *convent)
+		ok := make(chan bool)
+		var input []EF.Container
+		input = append(input, p.listInput)
+		input = append(input, twice)
+
+		go func() {
+			for i := range rd.PipeTwice(DBnumber, input) {
+				a := p.convent.constructor()
+				a.value = i
+				ch <- &a
+
+			}
+			ok <- true
+		}()
+		go func() {
+			<-ok
+			close(ch)
+		}()
+		defer p.lock.Unlock()
+		return ch
+
+	}
+
+	if p.keyInput.Input != nil {
+		ch := make(chan *convent)
+		var input []EF.Container
+		input = append(input, p.keyInput)
+		input = append(input, twice)
+		ok := make(chan bool)
+		go func() {
+			for i := range rd.PipeTwice(DBnumber, input) {
+				a := p.convent.constructor()
+				a.value = i
+				ch <- &a
+
+			}
+			ok <- true
+		}()
+		go func() {
+			<-ok
+			close(ch)
+		}()
+		defer p.lock.Unlock()
+		return ch
+
+	}
+	a := p.convent.constructor()
+	a.value = nil
+	ch1 := make(chan *convent)
+	ch1 <- &a
+
+	defer p.lock.Unlock()
+	return ch1
+}
+
+type Queue struct {
+	convent convent
+	lock    sync.Mutex
+}
+
+func (p *Queue) QueuePipe(DBnumber int, twice EF.Container) chan *convent {
+	rd := db.DbContext{}
+	p.lock.Lock()
+	ch := make(chan *convent)
+	ok := make(chan bool)
+	go func() {
+		for i := range rd.Pipe(DBnumber, twice) {
+			a := p.convent.constructor()
+			a.value = i
+			ch <- &a
+		}
+		ok <- true
+	}()
+	go func() {
+		<-ok
+		close(ch)
+	}()
+	defer p.lock.Unlock()
+	return nil
+}
+
+func (p *Queue) QueuePipeTWice(DBnumber int, twice ...[]EF.Container) chan *convent {
+	rd := db.DbContext{}
+	p.lock.Lock()
+	ch := make(chan *convent)
+	ok := make(chan bool)
+	go func() {
+		for i := range rd.PipeTwice(DBnumber, twice...) {
+			a := p.convent.constructor()
+			a.value = i
+			ch <- &a
+		}
+		ok <- true
+
+	}()
+	go func() {
+		<-ok
+		close(ch)
+	}()
+	defer p.lock.Unlock()
+	return nil
+}
 
 type convent struct {
 	lock  sync.Mutex

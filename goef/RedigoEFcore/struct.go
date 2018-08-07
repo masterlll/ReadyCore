@@ -8,19 +8,20 @@ import (
 )
 
 type Redis struct {
-	RDState RDState
+	//	RDState RDState
 	////// 狀態
 	Hash  Hash
 	List  List
 	Set   Set
 	Key   Key
 	Other Other
+	Queue Queue
 }
 
-type RDState struct {
-	Err   error
-	Stats string
-}
+// type RDState struct {
+// 	Err   error
+// 	Stats string
+// }
 
 type Hash struct {
 	work work
@@ -97,6 +98,7 @@ func (r *Set) SADD(table string, value ...interface{}) *work {
 	b.setInput.Input = input
 	b.value = b.setInput
 	b.setInput.Action = "SADD"
+	b.value = b.setInput
 	b.lock.Unlock()
 	return b
 
@@ -160,6 +162,21 @@ func (r *Set) SISMEMBER(table string, key string) *work {
 
 }
 
+func (r *Set) SMEMBERS(table string) *work {
+
+	input, _ := EF.MergeValue("SMEMBERS", table, nil, nil)
+
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.setInput.Input = input
+	b.value = b.setInput
+	b.setInput.Action = "SMEMBERS"
+	b.lock.Unlock()
+
+	return b
+
+}
+
 func (r *Set) SSCAN(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SSCAN", table, key, nil)
@@ -176,6 +193,62 @@ func (r *Set) SSCAN(table string, key string) *work {
 
 type List struct {
 	work work
+}
+
+func (r *List) LSET(table string, index string, value ...interface{}) *work {
+
+	input, _ := EF.MergeValue("LSET", table, index, value)
+
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.listInput.Input = input
+	b.listInput.Action = "LSET"
+	b.value = b.listInput
+	b.lock.Unlock()
+	return b
+
+}
+
+func (r *List) LPUSH(table string, value ...interface{}) *work {
+
+	input, _ := EF.MergeValue("LPUSH", table, nil, value)
+
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.listInput.Input = input
+	b.listInput.Action = "LPUSH"
+	b.value = b.listInput
+	b.lock.Unlock()
+	return b
+
+}
+
+func (r *List) LINDEX(table string, index string) *work {
+
+	input, _ := EF.MergeValue("LINDEX", table, index, nil)
+
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.listInput.Input = input
+	b.listInput.Action = "LINDEX"
+	b.value = b.listInput
+	b.lock.Unlock()
+	return b
+
+}
+
+func (r *List) LLEN(table string) *work {
+
+	input, _ := EF.MergeValue("LLEN", table, nil, nil)
+
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.listInput.Input = input
+	b.listInput.Action = "LLEN"
+	b.value = b.listInput
+	b.lock.Unlock()
+	return b
+
 }
 
 type Key struct {
@@ -214,16 +287,3 @@ func (r *Other) SCAN(table string) *work {
 	return b
 
 }
-
-// type Twice struct {
-// 	Hash Hash
-// 	// List  List
-// 	// Set   Set
-// 	// Key   Key
-// 	// Other Other
-// }
-
-// func (p *Twice) constructor() *Twice {
-
-// 	return p
-// }

@@ -21,3 +21,9 @@ func (red *DbContext) DO(DB int, in EF.Container) chan interface{} {
 	return red.do(DB, in)
 
 }
+
+func (red *DbContext) PipeTwice(DB int, input ...[]EF.Container) chan interface{} {
+
+	return red.pipetwice(DB, input...)
+
+}

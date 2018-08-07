@@ -70,7 +70,7 @@ func (red *singleton) poolarray(i int) error {
 		err := conn.TestOnBorrow(conn.Get(), time.Now())
 		if err != nil {
 
-			fmt.Println(123)
+
 			return err
 		}
 		red.poolist = append(red.poolist, &conn)

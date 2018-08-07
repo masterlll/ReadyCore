@@ -2,7 +2,7 @@ package RedisDB
 
 import (
 	"fmt"
-	
+
 	EF "ReadyCore/ReadyCore/goef/other"
 	//"github.com/gomodule/redigo/redis"
 )
@@ -59,30 +59,43 @@ func (S *Redis) do(DB int, In EF.Container) chan interface{} {
 	return DO
 }
 
-func (S *Redis) pipetwice(DB int, input ...EF.Container) chan interface{} {
+func (S *Redis) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 
 	data := make(chan interface{})
 	ok := make(chan bool)
 	c := RDConn(DB).Get()
-	go func(input []EF.Container) {
-		for _, p := range input {
-			err2 := c.Send(p.Action, p.Input...)
-			if err2 != nil {
-				fmt.Println("redis  failed:", err2)
-			}
-		}
-		if err := c.Flush(); err != nil { // 清空記憶體　發送
-			fmt.Println("err :", err)
-		}
-		for i := 1; i <= len(input); i++ {
-			re, err := c.Receive()
+
+	for _, in := range input {
+
+		go func(input []EF.Container) {
+
+			fmt.Println(in)
+
+			err := c.Send(input[0].Action, input[0].Input...)
 			if err != nil {
 				fmt.Println("redis  failed:", err)
 			}
-			data <- re
-		}
-		ok <- true
-	}(input)
+
+			err2 := c.Send(input[1].Action, input[1].Input...)
+			if err2 != nil {
+				fmt.Println("redis  failed:", err2)
+			}
+
+			if err := c.Flush(); err != nil { // 清空記憶體　發送
+				fmt.Println("err :", err)
+			}
+			for i := 1; i <= len(input); i++ {
+				re, err := c.Receive()
+				if err != nil {
+					fmt.Println("redis  failed:", err)
+				}
+				data <- re
+			}
+			ok <- true
+		}(in)
+
+	}
+
 	go func() {
 		<-ok
 		c.Close()
