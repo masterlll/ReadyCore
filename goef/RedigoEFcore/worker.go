@@ -29,11 +29,13 @@ func (p *work) Value() EF.Container {
 
 func (p *work) DO(DBnumber int) *convent {
 	rd := db.DbContext{}
+
 	p.lock.Lock()
 	a := p.convent.constructor()
 	if p.setInput.Input != nil {
 
 		a.value = <-rd.DO(DBnumber, p.setInput)
+		fmt.Println(a)
 		defer p.lock.Unlock()
 		return &a
 	}
@@ -124,6 +126,10 @@ func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 		input = append(input, twice)
 		ok := make(chan bool)
 		go func() {
+			<-ok
+			close(ch)
+		}()
+		go func() {
 			for i := range rd.PipeTwice(DBnumber, input) {
 				a := p.convent.constructor()
 				a.value = i
@@ -132,10 +138,6 @@ func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 
 			}
 			ok <- true
-		}()
-		go func() {
-			<-ok
-			close(ch)
 		}()
 
 		defer p.lock.Unlock()
@@ -228,48 +230,52 @@ type Queue struct {
 	lock    sync.Mutex
 }
 
-func (p *Queue) QueuePipe(DBnumber int, twice EF.Container) chan *convent {
+func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
 	rd := db.DbContext{}
 	p.lock.Lock()
 	ch := make(chan *convent)
 	ok := make(chan bool)
 	go func() {
-		for i := range rd.Pipe(DBnumber, twice) {
-			a := p.convent.constructor()
-			a.value = i
-			ch <- &a
-		}
-		ok <- true
-	}()
-	go func() {
 		<-ok
 		close(ch)
 	}()
-	defer p.lock.Unlock()
-	return nil
-}
-
-func (p *Queue) QueuePipeTWice(DBnumber int, twice ...[]EF.Container) chan *convent {
-	rd := db.DbContext{}
-	p.lock.Lock()
-	ch := make(chan *convent)
-	ok := make(chan bool)
 	go func() {
-		for i := range rd.PipeTwice(DBnumber, twice...) {
+		for i := range rd.Pipe(DBnumber, twice...) {
 			a := p.convent.constructor()
 			a.value = i
+			//	fmt.Println(a)
 			ch <- &a
+			//fmt.Println("hi")
 		}
 		ok <- true
+	}()
 
-	}()
-	go func() {
-		<-ok
-		close(ch)
-	}()
 	defer p.lock.Unlock()
-	return nil
+	return ch
 }
+
+// 封印
+// func (p *Queue) QueuePipeTWice(DBnumber int, twice ...[]EF.Container) chan *convent {
+// 	rd := db.DbContext{}
+// 	p.lock.Lock()
+// 	ch := make(chan *convent)
+// 	ok := make(chan bool)
+// 	go func() {
+// 		for i := range rd.PipeTwice(DBnumber, twice...) {
+// 			a := p.convent.constructor()
+// 			a.value = i
+// 			ch <- &a
+// 		}
+// 		ok <- true
+
+// 	}()
+// 	go func() {
+// 		<-ok
+// 		close(ch)
+// 	}()
+// 	defer p.lock.Unlock()
+// 	return ch
+// }
 
 type convent struct {
 	lock  sync.Mutex

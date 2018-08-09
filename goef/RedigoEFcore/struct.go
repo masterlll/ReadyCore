@@ -6,7 +6,6 @@ import (
 	EF "ReadyCore/ReadyCore/goef/other"
 	"sync"
 )
-
 type Redis struct {
 	//	RDState RDState
 	////// 狀態
@@ -43,6 +42,38 @@ func (r *Hash) HGET(table string, key string) *work {
 	return b
 
 }
+func (r *Hash) HMGET(table string, key ...interface{}) *work {
+
+	input, _ := EF.MergeValue("HMGET", table, nil, key...)
+
+	//r.lock.Lock()
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.hashInput.Input = input
+	b.hashInput.Action = "HMGET"
+	b.value = b.hashInput
+	b.lock.Unlock()
+	//	defer r.lock.Unlock()
+	return b
+
+}
+
+func (r *Hash) HGETALL(table string) *work {
+
+	input, _ := EF.MergeValue("HGETALL", table, nil, nil)
+	fmt.Println(input)
+
+	//r.lock.Lock()
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.hashInput.Input = input
+	b.hashInput.Action = "HGETALL"
+	b.value = b.hashInput
+	b.lock.Unlock()
+	//	defer r.lock.Unlock()
+	return b
+
+}
 
 func (r *Hash) HDEL(table string, key string) *work {
 
@@ -71,9 +102,9 @@ func (r *Hash) HEXISTS(table string, key string) *work {
 	return b
 
 }
-func (r *Hash) HSET(table string, key string, value interface{}) *work {
+func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
-	input, _ := EF.MergeValue("HSET", table, key, value)
+	input, _ := EF.MergeValue("HSET", table, key, value...)
 
 	b := r.work.constructor()
 	b.lock.Lock()
@@ -91,7 +122,9 @@ type Set struct {
 
 func (r *Set) SADD(table string, value ...interface{}) *work {
 
-	input, _ := EF.MergeValue("SADD", table, nil, value)
+	input, _ := EF.MergeValue("SADD", table, nil, value...)
+
+	fmt.Println(input)
 
 	b := r.work.constructor()
 	b.lock.Lock()
@@ -151,7 +184,7 @@ func (r *Set) SINTER(table string, key string) *work {
 func (r *Set) SISMEMBER(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SISMEMBER", table, key, nil)
-
+	fmt.Println(input)
 	b := r.work.constructor()
 	b.lock.Lock()
 	b.setInput.Input = input
@@ -209,9 +242,9 @@ func (r *List) LSET(table string, index string, value ...interface{}) *work {
 
 }
 
-func (r *List) LPUSH(table string, value ...interface{}) *work {
+func (r *List) LPUSH(table string, value interface{}) *work {
 
-	input, _ := EF.MergeValue("LPUSH", table, nil, value)
+	input, _ := EF.MergeValue("LPUSH", table, value, nil)
 
 	b := r.work.constructor()
 	b.lock.Lock()
@@ -270,6 +303,21 @@ func (r *Key) DEL(table string) *work {
 
 }
 
+func (r *Key) EXPIRE(table string, time int) *work {
+
+	input, _ := EF.MergeValue("EXPIRE", table, nil, time)
+	fmt.Println(input)
+	b := r.work.constructor()
+	b.lock.Lock()
+	b.keyInput.Input = input
+	b.keyInput.Action = "EXPIRE"
+	b.value = b.keyInput
+
+	b.lock.Unlock()
+	return b
+
+}
+
 type Other struct {
 	work work
 }
@@ -287,3 +335,4 @@ func (r *Other) SCAN(table string) *work {
 	return b
 
 }
+

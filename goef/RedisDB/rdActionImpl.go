@@ -10,7 +10,6 @@ import (
 type Redis struct {
 }
 
-// pipe
 func (S *Redis) pipe(DB int, input ...EF.Container) chan interface{} {
 
 	data := make(chan interface{})
@@ -33,6 +32,7 @@ func (S *Redis) pipe(DB int, input ...EF.Container) chan interface{} {
 			}
 			data <- re
 		}
+
 		ok <- true
 	}(input)
 	go func() {
@@ -47,6 +47,8 @@ func (S *Redis) pipe(DB int, input ...EF.Container) chan interface{} {
 func (S *Redis) do(DB int, In EF.Container) chan interface{} {
 	DO := make(chan interface{})
 	c := RDConn(DB).Get()
+
+
 	res, err := c.Do(In.Action, In.Input...)
 	if err != nil {
 		fmt.Println(err)
@@ -66,10 +68,9 @@ func (S *Redis) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 	c := RDConn(DB).Get()
 
 	for _, in := range input {
-
+		fmt.Println(len(input))
+		fmt.Println(input)
 		go func(input []EF.Container) {
-
-			fmt.Println(in)
 
 			err := c.Send(input[0].Action, input[0].Input...)
 			if err != nil {
@@ -95,7 +96,6 @@ func (S *Redis) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 		}(in)
 
 	}
-
 	go func() {
 		<-ok
 		c.Close()
