@@ -4,27 +4,23 @@ import (
 	"fmt"
 	"time"
 
-	rd "ReadyCore/ReadyCore/goef/RedisDB"
-	EF "ReadyCore/ReadyCore/goef/other"
-	//"fmt"
-	Core "ReadyCore/ReadyCore/goef/RedigoEFcore"
-	//	"strconv"
-	//"time"
+	rd "github.com/ReadyCore/goef/RedisDB"
+	EF "github.com/ReadyCore/goef/other"
 )
 
 func main() {
 
-	if err := rd.Shared().InitRedis(); err != nil {
-		fmt.Println("err", err)
-	}
+	// if err := rd.Shared().InitRedis(); err != nil {
+	// 	fmt.Println("err", err)
+	// }
 
-	db := Core.Redis{}
-	fmt.Println(db.Hash.HSET("AAAA", "AAAA", "123456789").Pipe(13).Value())
-	fmt.Println(db.Hash.HGET("AAAA", "AAAA").Pipe(13).Value())
-	fmt.Println(db.Hash.HEXISTS("AAAA", "AAAA").Pipe(13).Value())
-	fmt.Println(db.Hash.HSET("s", "s", "s").DO(13).Value())
-	fmt.Println(db.Hash.HGET("s", "s").DO(13).Value())
-	fmt.Println(db.Hash.HEXISTS("s", "s").DO(13).Value())
+	// db := Core.Redis{}
+	// fmt.Println(db.Hash.HSET("AAAA", "AAAA", "123456789").Pipe(13).Value())
+	// fmt.Println(db.Hash.HGET("AAAA", "AAAA").Pipe(13).Value())
+	// fmt.Println(db.Hash.HEXISTS("AAAA", "AAAA").Pipe(13).Value())
+	// fmt.Println(db.Hash.HSET("s", "s", "s").DO(13).Value())
+	// fmt.Println(db.Hash.HGET("s", "s").DO(13).Value())
+	// fmt.Println(db.Hash.HEXISTS("s", "s").DO(13).Value())
 }
 
 func test() {

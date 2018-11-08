@@ -3,9 +3,23 @@ package RedigoEFcore
 //"fmt"
 
 import (
-	EF "ReadyCore/ReadyCore/goef/other"
+	"fmt"
 	"sync"
+
+	EF "github.com/ReadyCore/goef/other"
 )
+
+type Cluster struct {
+	//	RDState RDState
+	////// 狀態
+	Hash  Hash
+	List  List
+	Set   Set
+	Key   Key
+	Other Other
+	Queue Queue
+}
+
 type Redis struct {
 	//	RDState RDState
 	////// 狀態
@@ -335,4 +349,3 @@ func (r *Other) SCAN(table string) *work {
 	return b
 
 }
-

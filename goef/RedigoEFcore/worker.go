@@ -1,10 +1,10 @@
 package RedigoEFcore
 
 import (
-	
-	db"ReadyCore/ReadyCore/goef/RedisDB"	
-	EF "ReadyCore/ReadyCore/goef/other"
 	"sync"
+
+	db "github.com/ReadyCore/goef/RedisDB"
+	EF "github.com/ReadyCore/goef/other"
 )
 
 type work struct {
@@ -35,7 +35,6 @@ func (p *work) DO(DBnumber int) *convent {
 	if p.setInput.Input != nil {
 
 		a.value = <-rd.DO(DBnumber, p.setInput)
-		fmt.Println(a)
 		defer p.lock.Unlock()
 		return &a
 	}

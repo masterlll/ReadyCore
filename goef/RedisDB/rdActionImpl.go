@@ -2,8 +2,11 @@ package RedisDB
 
 import (
 	"fmt"
+	"meeline/job/common/logger"
+	"time"
 
-	EF "ReadyCore/ReadyCore/goef/other"
+	EF "github.com/ReadyCore/goef/other"
+	"github.com/gomodule/redigo/redis"
 	//"github.com/gomodule/redigo/redis"
 )
 
@@ -45,9 +48,9 @@ func (S *Redis) pipe(DB int, input ...EF.Container) chan interface{} {
 }
 
 func (S *Redis) do(DB int, In EF.Container) chan interface{} {
+	fmt.Println("  redis   do ")
 	DO := make(chan interface{})
 	c := RDConn(DB).Get()
-
 
 	res, err := c.Do(In.Action, In.Input...)
 	if err != nil {
@@ -103,4 +106,31 @@ func (S *Redis) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 
 	}()
 	return data
+}
+
+type ClusterMode struct {
+}
+
+func (S *ClusterMode) do(DB int, In EF.Container) chan interface{} {
+	fmt.Println("  cluster  do ")
+
+	DO := make(chan interface{})
+	ok := make(chan redis.Conn)
+	time.Sleep(1 * time.Millisecond)
+	go func() {
+		c := ClustorConn()
+		res, err := c.Do(In.Action, In.Input...)
+		if err != nil {
+			logger.Err(err, In.Action+"do().do")
+		}
+		DO <- res
+		ok <- c
+	}()
+	go func() {
+		for c := range ok {
+			c.Close()
+		}
+		close(DO)
+	}()
+	return DO
 }

@@ -6,14 +6,27 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/mna/redisc"
 )
 
-type singleton struct {
-	poolist []*redis.Pool
-	Pool    *redis.Pool
+const (
+	ModeRedis = 0
+	ModeCluster = 1
+)
+
+type Cluster struct {
+	ProxyAddressCluster []string
+	PassWord            string
+	MaxIdle             int
+	MaxActive           int
+	ConnType            string
+	ConnectTimeout      int
+	ReadTimeout         int
+	WriteTimeout        int
+	DBnumber            int
 }
 
-type RDConnModel struct {
+type RedisConn struct {
 	ProxyAddress   string
 	PassWord       string
 	MaxIdle        int
@@ -23,6 +36,12 @@ type RDConnModel struct {
 	ReadTimeout    int
 	WriteTimeout   int
 	DBnumber       int
+}
+
+type singleton struct {
+	poolist     []*redis.Pool
+	Pool        *redis.Pool
+	clusterpool redisc.Cluster
 }
 
 var instance *singleton
@@ -40,16 +59,36 @@ func Shared() *singleton {
 
 func (red *singleton) InitRedis() error {
 
-	if err := red.poolarray(13); err != nil {
+	if err := red.connPool(13); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (red *singleton) poolarray(i int) error {
+func (red *singleton) ClusterPool() error {
+
+	var Cluster Cluster
+
+	cluster := redisc.Cluster{
+		StartupNodes: Cluster.ProxyAddressCluster,
+		DialOptions: []redis.DialOption{redis.DialConnectTimeout(5 * time.Second),
+			redis.DialReadTimeout(time.Duration(1000) * time.Millisecond),
+			redis.DialWriteTimeout(time.Duration(1000) * time.Millisecond)},
+		CreatePool: createPool,
+	}
+	if err := cluster.Refresh(); err != nil {
+		///err
+
+	}
+
+	red.clusterpool = cluster
+	return nil
+}
+
+func (red *singleton) connPool(i int) error {
 
 	for b := 0; b <= i; b++ {
-		var cf RDConnModel
+		var cf RedisConn
 		//cf.ProxyAddress = "127.0.0.1:6379"
 		cf.PassWord = "12345678"
 		//c
@@ -70,7 +109,6 @@ func (red *singleton) poolarray(i int) error {
 		err := conn.TestOnBorrow(conn.Get(), time.Now())
 		if err != nil {
 
-
 			return err
 		}
 		red.poolist = append(red.poolist, &conn)
@@ -83,7 +121,37 @@ func RDConn(i int) *redis.Pool {
 	return Shared().poolist[i]
 }
 
-func newPool(cf RDConnModel) redis.Pool {
+func ClustorConn() redis.Conn {
+	a := Shared().clusterpool.Get()
+	return a
+}
+
+func createPool(addr string, opts ...redis.DialOption) (*redis.Pool, error) {
+	return &redis.Pool{
+		MaxIdle:     5,
+		MaxActive:   50,
+		IdleTimeout: time.Minute,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", addr, opts...)
+			if err != nil {
+				fmt.Println(addr, "password")
+				fmt.Println(err)
+
+				return nil, err
+			}
+			if _, err := c.Do("AUTH", "password"); err != nil { ///密碼　驗證
+				c.Close()
+			}
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}, nil
+}
+
+func newPool(cf RedisConn) redis.Pool {
 
 	a := redis.Pool{
 		MaxIdle:   cf.MaxIdle,

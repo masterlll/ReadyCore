@@ -2,12 +2,13 @@ package RedisDB
 
 import (
 	//	"fmt"
-	EF "ReadyCore/ReadyCore/goef/other"
+	EF "github.com/ReadyCore/goef/other"
 	//"time"
 )
 
 type DbContext struct {
 	Redis
+	ClusterMode
 }
 
 func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
@@ -16,9 +17,12 @@ func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
 
 }
 
-func (red *DbContext) DO(DB int, in EF.Container) chan interface{} {
+func (red *DbContext) DO(DB int, in EF.Container, Mode int) chan interface{} {
 
-	return red.do(DB, in)
+	if Mode != ModeCluster {
+		return red.Redis.do(DB, in)
+	}
+	return red.ClusterMode.do(DB, in)
 
 }
 
