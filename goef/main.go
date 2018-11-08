@@ -83,7 +83,7 @@ func test() {
 		a.Input = append(a.Input, "HSET")
 		C = append(C, a)
 
-		bbb := rds.DO(1, a)
+		bbb := rds.DO(1, a ,1)
 		fmt.Println("do", <-bbb)
 
 	}
