@@ -10,6 +10,7 @@ import (
 type work struct {
 	convent    convent
 	lock       sync.Mutex
+	Mode       int
 	value      EF.Container
 	hashInput  EF.Container
 	setInput   EF.Container
@@ -34,27 +35,27 @@ func (p *work) DO(DBnumber int) *convent {
 	a := p.convent.constructor()
 	if p.setInput.Input != nil {
 
-		a.value = <-rd.DO(DBnumber, p.setInput)
+		a.value = <-rd.DO(DBnumber, p.setInput, p.Mode)
 		defer p.lock.Unlock()
 		return &a
 	}
 
 	if p.hashInput.Input != nil {
-		a.value = <-rd.DO(DBnumber, p.hashInput)
+		a.value = <-rd.DO(DBnumber, p.hashInput, p.Mode)
 		defer p.lock.Unlock()
 		return &a
 	}
 
 	if p.listInput.Input != nil {
 
-		a.value = <-rd.DO(DBnumber, p.listInput)
+		a.value = <-rd.DO(DBnumber, p.listInput, p.Mode)
 		defer p.lock.Unlock()
 		return &a
 
 	}
 
 	if p.keyInput.Input != nil {
-		a.value = <-rd.DO(DBnumber, p.keyInput)
+		a.value = <-rd.DO(DBnumber, p.keyInput, p.Mode)
 		defer p.lock.Unlock()
 		return &a
 	}

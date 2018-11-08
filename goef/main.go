@@ -13,7 +13,6 @@ func main() {
 	// if err := rd.Shared().InitRedis(); err != nil {
 	// 	fmt.Println("err", err)
 	// }
-
 	// db := Core.Redis{}
 	// fmt.Println(db.Hash.HSET("AAAA", "AAAA", "123456789").Pipe(13).Value())
 	// fmt.Println(db.Hash.HGET("AAAA", "AAAA").Pipe(13).Value())

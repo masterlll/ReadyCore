@@ -9,12 +9,9 @@ import (
 	"github.com/mna/redisc"
 )
 
-const (
-	ModeRedis = 0
-	ModeCluster = 1
-)
 
 type Cluster struct {
+	
 	ProxyAddressCluster []string
 	PassWord            string
 	MaxIdle             int
@@ -42,6 +39,8 @@ type singleton struct {
 	poolist     []*redis.Pool
 	Pool        *redis.Pool
 	clusterpool redisc.Cluster
+	Cluster     Cluster
+	RedisConn   RedisConn
 }
 
 var instance *singleton
@@ -67,51 +66,48 @@ func (red *singleton) InitRedis() error {
 
 func (red *singleton) ClusterPool() error {
 
-	var Cluster Cluster
-
 	cluster := redisc.Cluster{
-		StartupNodes: Cluster.ProxyAddressCluster,
-		DialOptions: []redis.DialOption{redis.DialConnectTimeout(5 * time.Second),
-			redis.DialReadTimeout(time.Duration(1000) * time.Millisecond),
-			redis.DialWriteTimeout(time.Duration(1000) * time.Millisecond)},
-		CreatePool: createPool,
+		StartupNodes: red.Cluster.ProxyAddressCluster,
+		DialOptions: []redis.DialOption{redis.DialConnectTimeout(time.Duration(red.Cluster.ConnectTimeout) * time.Second),
+			redis.DialReadTimeout(time.Duration(red.Cluster.ReadTimeout) * time.Millisecond),
+			redis.DialWriteTimeout(time.Duration(red.Cluster.WriteTimeout) * time.Millisecond)},
+		CreatePool: red.createPool,
 	}
 	if err := cluster.Refresh(); err != nil {
 		///err
-
 	}
-
 	red.clusterpool = cluster
 	return nil
 }
 
 func (red *singleton) connPool(i int) error {
 
-	for b := 0; b <= i; b++ {
-		var cf RedisConn
-		//cf.ProxyAddress = "127.0.0.1:6379"
-		cf.PassWord = "12345678"
-		//c
-		//連線ＴＹＰＥ , 最大閒置連線　，　最大連線
-		cf.ConnType = "tcp"
-		cf.MaxIdle = 120000
-		cf.MaxActive = 2400000
-		/// 連線　　讀取　寫入　的逾時
-		cf.ConnectTimeout = 10000
-		cf.ReadTimeout = 1000
-		cf.WriteTimeout = 1000
-		////0
-		//// 選擇ＤＢ　０,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-		cf.DBnumber = b
+	var b int
+	for b <= i {
+		// //cf.ProxyAddress = "127.0.0.1:6379"
+		// cf.PassWord = "12345678"
+		// //c
+		// //連線ＴＹＰＥ , 最大閒置連線　，　最大連線
+		// cf.ConnType = "tcp"
+		// cf.MaxIdle = 120000
+		// cf.MaxActive = 2400000
+		// /// 連線　　讀取　寫入　的逾時
+		// cf.ConnectTimeout = 10000
+		// cf.ReadTimeout = 1000
+		// cf.WriteTimeout = 1000
+		// ////0
+		// //// 選擇ＤＢ　０,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+		// cf.DBnumber = b
+		var p = red.RedisConn
+		p.DBnumber = b
 		// fmt.Println("cf", cf)
-		conn := newPool(cf) /////設定連線
-
+		conn := newPool(p) /////設定連線
 		err := conn.TestOnBorrow(conn.Get(), time.Now())
 		if err != nil {
-
 			return err
 		}
 		red.poolist = append(red.poolist, &conn)
+		b++
 	}
 
 	return nil
@@ -126,20 +122,19 @@ func ClustorConn() redis.Conn {
 	return a
 }
 
-func createPool(addr string, opts ...redis.DialOption) (*redis.Pool, error) {
+func (red *singleton) createPool(addr string, opts ...redis.DialOption) (*redis.Pool, error) {
 	return &redis.Pool{
-		MaxIdle:     5,
-		MaxActive:   50,
+		MaxIdle:     red.Cluster.MaxIdle,
+		MaxActive:   red.Cluster.MaxActive,
 		IdleTimeout: time.Minute,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", addr, opts...)
+			c, err := redis.Dial( red.Cluster.ConnType, addr, opts...)
 			if err != nil {
-				fmt.Println(addr, "password")
+				fmt.Println(addr, red.Cluster.PassWord)
 				fmt.Println(err)
-
 				return nil, err
 			}
-			if _, err := c.Do("AUTH", "password"); err != nil { ///密碼　驗證
+			if _, err := c.Do("AUTH", red.Cluster.PassWord); err != nil { ///密碼　驗證
 				c.Close()
 			}
 			return c, err

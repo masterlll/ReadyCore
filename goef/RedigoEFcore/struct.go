@@ -9,17 +9,6 @@ import (
 	EF "github.com/ReadyCore/goef/other"
 )
 
-type Cluster struct {
-	//	RDState RDState
-	////// 狀態
-	Hash  Hash
-	List  List
-	Set   Set
-	Key   Key
-	Other Other
-	Queue Queue
-}
-
 type Redis struct {
 	//	RDState RDState
 	////// 狀態
@@ -28,7 +17,26 @@ type Redis struct {
 	Set   Set
 	Key   Key
 	Other Other
+	/// Q
 	Queue Queue
+}
+
+func (p *Redis) Sigh() {
+	p.Hash.mode = EF.ModeRedis
+	p.Set.mode = EF.ModeRedis
+	p.List.mode = EF.ModeRedis
+	p.Key.mode = EF.ModeRedis
+	p.Other.mode = EF.ModeRedis
+
+}
+func (p *Redis) Cluster() {
+
+	p.Hash.mode = EF.ModeCluster
+	p.Set.mode = EF.ModeCluster
+	p.List.mode = EF.ModeCluster
+	p.Key.mode = EF.ModeCluster
+	p.Other.mode = EF.ModeCluster
+
 }
 
 // type RDState struct {
@@ -38,7 +46,7 @@ type Redis struct {
 
 type Hash struct {
 	work work
-	lock sync.Mutex
+	mode int
 }
 
 func (r *Hash) HGET(table string, key string) *work {
@@ -47,7 +55,9 @@ func (r *Hash) HGET(table string, key string) *work {
 
 	//r.lock.Lock()
 	b := r.work.constructor()
+
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HGET"
 	b.value = b.hashInput
@@ -63,6 +73,7 @@ func (r *Hash) HMGET(table string, key ...interface{}) *work {
 	//r.lock.Lock()
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HMGET"
 	b.value = b.hashInput
@@ -80,6 +91,7 @@ func (r *Hash) HGETALL(table string) *work {
 	//r.lock.Lock()
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HGETALL"
 	b.value = b.hashInput
@@ -95,6 +107,7 @@ func (r *Hash) HDEL(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HDEL"
 	b.value = b.hashInput
@@ -109,6 +122,7 @@ func (r *Hash) HEXISTS(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HEXISTS"
 	b.value = b.hashInput
@@ -122,6 +136,8 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+
+	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HSET"
 	b.value = b.hashInput
@@ -132,6 +148,8 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 type Set struct {
 	work work
+	mode int
+	lock sync.Mutex
 }
 
 func (r *Set) SADD(table string, value ...interface{}) *work {
@@ -142,6 +160,7 @@ func (r *Set) SADD(table string, value ...interface{}) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.value = b.setInput
 	b.setInput.Action = "SADD"
@@ -157,6 +176,7 @@ func (r *Set) SCARD(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.setInput.Action = "SCARD"
 	b.value = b.setInput
@@ -172,6 +192,7 @@ func (r *Set) SDIFF(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.setInput.Action = "SDIFF"
 	b.value = b.setInput
@@ -186,6 +207,7 @@ func (r *Set) SINTER(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.setInput.Action = "SINTER"
 	b.value = b.setInput
@@ -198,9 +220,10 @@ func (r *Set) SINTER(table string, key string) *work {
 func (r *Set) SISMEMBER(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SISMEMBER", table, key, nil)
-	fmt.Println(input)
+
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.value = b.setInput
 	b.setInput.Action = "SISMEMBER"
@@ -215,6 +238,7 @@ func (r *Set) SMEMBERS(table string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.value = b.setInput
 	b.setInput.Action = "SMEMBERS"
@@ -230,6 +254,7 @@ func (r *Set) SSCAN(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.setInput.Input = input
 	b.value = b.setInput
 	b.setInput.Action = "SSCAN"
@@ -240,6 +265,7 @@ func (r *Set) SSCAN(table string, key string) *work {
 
 type List struct {
 	work work
+	mode int
 }
 
 func (r *List) LSET(table string, index string, value ...interface{}) *work {
@@ -248,6 +274,7 @@ func (r *List) LSET(table string, index string, value ...interface{}) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.listInput.Input = input
 	b.listInput.Action = "LSET"
 	b.value = b.listInput
@@ -262,6 +289,7 @@ func (r *List) LPUSH(table string, value interface{}) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.listInput.Input = input
 	b.listInput.Action = "LPUSH"
 	b.value = b.listInput
@@ -276,6 +304,7 @@ func (r *List) LINDEX(table string, index string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.listInput.Input = input
 	b.listInput.Action = "LINDEX"
 	b.value = b.listInput
@@ -290,6 +319,7 @@ func (r *List) LLEN(table string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.listInput.Input = input
 	b.listInput.Action = "LLEN"
 	b.value = b.listInput
@@ -300,6 +330,7 @@ func (r *List) LLEN(table string) *work {
 
 type Key struct {
 	work work
+	mode int
 }
 
 func (r *Key) DEL(table string) *work {
@@ -308,6 +339,7 @@ func (r *Key) DEL(table string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.keyInput.Input = input
 	b.keyInput.Action = "DEL"
 	b.value = b.keyInput
@@ -323,6 +355,7 @@ func (r *Key) EXPIRE(table string, time int) *work {
 	fmt.Println(input)
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.keyInput.Input = input
 	b.keyInput.Action = "EXPIRE"
 	b.value = b.keyInput
@@ -334,6 +367,7 @@ func (r *Key) EXPIRE(table string, time int) *work {
 
 type Other struct {
 	work work
+	mode int
 }
 
 func (r *Other) SCAN(table string) *work {
@@ -341,6 +375,7 @@ func (r *Other) SCAN(table string) *work {
 	input, _ := EF.MergeValue("SCAN", table, nil, nil)
 	b := r.work.constructor()
 	b.lock.Lock()
+	b.Mode = r.mode
 	b.otherInput.Input = input
 	b.otherInput.Action = "SCAN"
 	b.value = b.otherInput

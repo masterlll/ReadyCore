@@ -19,7 +19,7 @@ func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
 
 func (red *DbContext) DO(DB int, in EF.Container, Mode int) chan interface{} {
 
-	if Mode != ModeCluster {
+	if Mode != EF.ModeCluster {
 		return red.Redis.do(DB, in)
 	}
 	return red.ClusterMode.do(DB, in)

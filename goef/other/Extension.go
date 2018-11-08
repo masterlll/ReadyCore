@@ -1,5 +1,10 @@
 package RedigoEFcore
 
+const (
+	ModeRedis   = 0
+	ModeCluster = 1
+)
+
 type Container struct {
 	Action string
 	DB     int
