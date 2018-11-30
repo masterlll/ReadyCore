@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"time"
 
-	rd "github.com/ReadyCore/goef/RedisDB"
+	db "github.com/ReadyCore/goef/RedigoEFcore"
 	EF "github.com/ReadyCore/goef/other"
 )
 
 func main() {
+
+	fmt.Println("ss")
+
+	a := db.RedisConnModel{}
+	a.Default()
+	a.
 
 	// if err := rd.Shared().InitRedis(); err != nil {
 	// 	fmt.Println("err", err)
@@ -83,7 +89,7 @@ func test() {
 		a.Input = append(a.Input, "HSET")
 		C = append(C, a)
 
-		bbb := rds.DO(1, a ,1)
+		bbb := rds.DO(1, a, 1)
 		fmt.Println("do", <-bbb)
 
 	}

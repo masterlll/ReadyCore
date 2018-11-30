@@ -9,6 +9,17 @@ import (
 	EF "github.com/ReadyCore/goef/other"
 )
 
+type RedisConn struct {
+	ProxyAddress   string // host
+	PassWord       string // 密碼
+	MaxIdle        int    // 最大閒置連線
+	MaxActive      int    // 最大連線
+	ConnType       string //連線 模式 TCP ..
+	ConnectTimeout int    //連線  Timeout
+	ReadTimeout    int    //讀取 Timeout
+	WriteTimeout   int    //寫入 Timeout
+	DBnumber       int    // DB號碼
+}
 type Redis struct {
 	//	RDState RDState
 	////// 狀態

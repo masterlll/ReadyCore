@@ -3,7 +3,6 @@ package RedigoEFcore
 import (
 	"sync"
 
-	db "github.com/ReadyCore/goef/RedisDB"
 	EF "github.com/ReadyCore/goef/other"
 )
 
@@ -29,7 +28,7 @@ func (p *work) Value() EF.Container {
 }
 
 func (p *work) DO(DBnumber int) *convent {
-	rd := db.DbContext{}
+	rd := DbContext{}
 
 	p.lock.Lock()
 	a := p.convent.constructor()
@@ -67,7 +66,7 @@ func (p *work) DO(DBnumber int) *convent {
 }
 
 func (p *work) Pipe(DBnumber int) *convent {
-	rd := db.DbContext{}
+	rd := DbContext{}
 	p.lock.Lock()
 	a := p.convent.constructor()
 
@@ -115,7 +114,7 @@ func (p *work) Pipe(DBnumber int) *convent {
 }
 
 func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
-	rd := db.DbContext{}
+	rd := DbContext{}
 
 	p.lock.Lock()
 
@@ -231,7 +230,7 @@ type Queue struct {
 }
 
 func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
-	rd := db.DbContext{}
+	rd := DbContext{}
 	p.lock.Lock()
 	ch := make(chan *convent)
 	ok := make(chan bool)

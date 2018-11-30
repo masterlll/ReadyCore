@@ -1,4 +1,4 @@
-package RedisDB
+package RedigoEFcore
 
 import (
 	//	"fmt"
@@ -8,7 +8,7 @@ import (
 
 type DbContext struct {
 	Redis
-	ClusterMode
+	//	ClusterMode
 }
 
 func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
@@ -19,10 +19,10 @@ func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
 
 func (red *DbContext) DO(DB int, in EF.Container, Mode int) chan interface{} {
 
-	if Mode != EF.ModeCluster {
-		return red.Redis.do(DB, in)
-	}
-	return red.ClusterMode.do(DB, in)
+	//	if Mode != EF.ModeCluster {
+	return red.Redis.do(DB, in)
+	//	}
+	//return red.ClusterMode.do(DB, in)
 
 }
 

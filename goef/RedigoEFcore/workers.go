@@ -1,16 +1,13 @@
-package RedisDB
+package RedigoEFcore
 
 import (
 	"fmt"
-	"meeline/job/common/logger"
-	"time"
 
 	EF "github.com/ReadyCore/goef/other"
-	"github.com/gomodule/redigo/redis"
 	//"github.com/gomodule/redigo/redis"
 )
 
-type Redis struct {
+type RedisMode struct {
 }
 
 func (S *Redis) pipe(DB int, input ...EF.Container) chan interface{} {
@@ -108,29 +105,29 @@ func (S *Redis) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 	return data
 }
 
-type ClusterMode struct {
-}
+// type ClusterMode struct {
+// }
 
-func (S *ClusterMode) do(DB int, In EF.Container) chan interface{} {
-	fmt.Println("  cluster  do ")
+// func (S *ClusterMode) do(DB int, In EF.Container) chan interface{} {
+// 	fmt.Println("  cluster  do ")
 
-	DO := make(chan interface{})
-	ok := make(chan redis.Conn)
-	time.Sleep(1 * time.Millisecond)
-	go func() {
-		c := ClustorConn()
-		res, err := c.Do(In.Action, In.Input...)
-		if err != nil {
-			logger.Err(err, In.Action+"do().do")
-		}
-		DO <- res
-		ok <- c
-	}()
-	go func() {
-		for c := range ok {
-			c.Close()
-		}
-		close(DO)
-	}()
-	return DO
-}
+// 	DO := make(chan interface{})
+// 	ok := make(chan redis.Conn)
+// 	time.Sleep(1 * time.Millisecond)
+// 	go func() {
+// 		c := ClustorConn()
+// 		res, err := c.Do(In.Action, In.Input...)
+// 		if err != nil {
+// 			///
+// 		}
+// 		DO <- res
+// 		ok <- c
+// 	}()
+// 	go func() {
+// 		for c := range ok {
+// 			c.Close()
+// 		}
+// 		close(DO)
+// 	}()
+// 	return DO
+// }
