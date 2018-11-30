@@ -1,13 +1,13 @@
 package RedigoEFcore
 
-import (
-	//	"fmt"
-	EF "github.com/ReadyCore/goef/other"
-	//"time"
-)
+import EF "github.com/ReadyCore/goef/other"
+
+//	"fmt"
+
+//"time"
 
 type DbContext struct {
-	Redis
+	RedisMode
 	//	ClusterMode
 }
 
@@ -17,12 +17,12 @@ func (red *DbContext) Pipe(DB int, in ...EF.Container) chan interface{} {
 
 }
 
-func (red *DbContext) DO(DB int, in EF.Container, Mode int) chan interface{} {
+func (red *DbContext) DO(DB int, in EF.Container, Mode string) chan interface{} {
 
 	//	if Mode != EF.ModeCluster {
-	return red.Redis.do(DB, in)
+	return red.do(DB, in)
 	//	}
-	//return red.ClusterMode.do(DB, in)
+	//	return red.ClusterMode.do(DB, in)
 
 }
 

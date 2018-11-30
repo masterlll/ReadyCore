@@ -9,7 +9,7 @@ import (
 type work struct {
 	convent    convent
 	lock       sync.Mutex
-	Mode       int
+	Mode       string
 	value      EF.Container
 	hashInput  EF.Container
 	setInput   EF.Container

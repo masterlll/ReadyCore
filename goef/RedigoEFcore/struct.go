@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	EF "github.com/ReadyCore/goef/other"
+	"github.com/gomodule/redigo/redis"
 )
 
 type RedisConn struct {
@@ -19,35 +20,18 @@ type RedisConn struct {
 	ReadTimeout    int    //讀取 Timeout
 	WriteTimeout   int    //寫入 Timeout
 	DBnumber       int    // DB號碼
+	Mode           string // 集群 or 一般
 }
-type Redis struct {
-	//	RDState RDState
-	////// 狀態
-	Hash  Hash
-	List  List
-	Set   Set
-	Key   Key
-	Other Other
+type RedisHelper struct {
+	Pool    *redis.Pool
+	poolist []*redis.Pool
+	Hash    Hash
+	List    List
+	Set     Set
+	Key     Key
+	Other   Other
 	/// Q
-	Queue Queue
-}
-
-func (p *Redis) Sigh() {
-	p.Hash.mode = EF.ModeRedis
-	p.Set.mode = EF.ModeRedis
-	p.List.mode = EF.ModeRedis
-	p.Key.mode = EF.ModeRedis
-	p.Other.mode = EF.ModeRedis
-
-}
-func (p *Redis) Cluster() {
-
-	p.Hash.mode = EF.ModeCluster
-	p.Set.mode = EF.ModeCluster
-	p.List.mode = EF.ModeCluster
-	p.Key.mode = EF.ModeCluster
-	p.Other.mode = EF.ModeCluster
-
+	//Queue Queue
 }
 
 // type RDState struct {
@@ -57,7 +41,7 @@ func (p *Redis) Cluster() {
 
 type Hash struct {
 	work work
-	mode int
+	mode string
 }
 
 func (r *Hash) HGET(table string, key string) *work {
@@ -65,10 +49,22 @@ func (r *Hash) HGET(table string, key string) *work {
 	input, _ := EF.MergeValue("HGET", table, key, nil)
 
 	//r.lock.Lock()
+
+	switch r.mode {
+	case single:
+		{
+
+		}
+	case Cluster:
+		{
+
+		}
+
+	}
 	b := r.work.constructor()
 
 	b.lock.Lock()
-	b.Mode = r.mode
+
 	b.hashInput.Input = input
 	b.hashInput.Action = "HGET"
 	b.value = b.hashInput
@@ -84,7 +80,7 @@ func (r *Hash) HMGET(table string, key ...interface{}) *work {
 	//r.lock.Lock()
 	b := r.work.constructor()
 	b.lock.Lock()
-	b.Mode = r.mode
+
 	b.hashInput.Input = input
 	b.hashInput.Action = "HMGET"
 	b.value = b.hashInput
@@ -102,7 +98,7 @@ func (r *Hash) HGETALL(table string) *work {
 	//r.lock.Lock()
 	b := r.work.constructor()
 	b.lock.Lock()
-	b.Mode = r.mode
+
 	b.hashInput.Input = input
 	b.hashInput.Action = "HGETALL"
 	b.value = b.hashInput
@@ -118,7 +114,7 @@ func (r *Hash) HDEL(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
-	b.Mode = r.mode
+
 	b.hashInput.Input = input
 	b.hashInput.Action = "HDEL"
 	b.value = b.hashInput
@@ -133,7 +129,7 @@ func (r *Hash) HEXISTS(table string, key string) *work {
 
 	b := r.work.constructor()
 	b.lock.Lock()
-	b.Mode = r.mode
+
 	b.hashInput.Input = input
 	b.hashInput.Action = "HEXISTS"
 	b.value = b.hashInput
@@ -148,7 +144,6 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 	b := r.work.constructor()
 	b.lock.Lock()
 
-	b.Mode = r.mode
 	b.hashInput.Input = input
 	b.hashInput.Action = "HSET"
 	b.value = b.hashInput
@@ -159,7 +154,7 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 type Set struct {
 	work work
-	mode int
+	mode string
 	lock sync.Mutex
 }
 
@@ -276,7 +271,7 @@ func (r *Set) SSCAN(table string, key string) *work {
 
 type List struct {
 	work work
-	mode int
+	mode string
 }
 
 func (r *List) LSET(table string, index string, value ...interface{}) *work {
@@ -341,7 +336,7 @@ func (r *List) LLEN(table string) *work {
 
 type Key struct {
 	work work
-	mode int
+	mode string
 }
 
 func (r *Key) DEL(table string) *work {
@@ -378,7 +373,7 @@ func (r *Key) EXPIRE(table string, time int) *work {
 
 type Other struct {
 	work work
-	mode int
+	mode string
 }
 
 func (r *Other) SCAN(table string) *work {

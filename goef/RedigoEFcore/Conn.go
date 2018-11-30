@@ -22,12 +22,14 @@ import (
 
 type RedisConnModel struct {
 	// sin
-	poolist []*redis.Pool
-	Pool    *redis.Pool
+	// Pool    *redis.Pool
+	// poolist []*redis.Pool
+
 	/// Cluster
 	//clusterpool redisc.Cluster
 	//Cluster     Cluster
 	RedisConn RedisConn
+	RedisHelper
 }
 
 const (
@@ -38,6 +40,8 @@ const (
 	writeTimeout   = 1000
 	dbnumber       = 0
 	tcp            = "TCP"
+	single         = "single"
+	Cluster        = "Cluster"
 )
 
 func (red *RedisConnModel) TcpMode() {
@@ -47,6 +51,14 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 
 	red.RedisConn.ProxyAddress = Host
 	red.RedisConn.PassWord = password
+	// 設定 help mode
+	red.RedisHelper.Hash.mode = single
+
+	red.RedisHelper.List.mode = single
+	red.RedisHelper.Set.mode = single
+	red.RedisHelper.Key.mode = single
+	red.RedisHelper.Other.mode = single
+
 }
 
 func (red *RedisConnModel) MaxConnSet(MaxIdle, MaxActive int) {
@@ -73,14 +85,11 @@ func (red *RedisConnModel) Default(Host, password string) {
 // var cLocks [n]sync.RWMutex
 
 func (red *RedisConnModel) Shared() *RedisConnModel {
-	// once.Do(func() {
-	// 	instance =
-	// })
-
 	return &RedisConnModel{}
 }
 
-func (red *RedisConnModel) InitRedis() error {
+// 連線
+func (red *RedisConnModel) RedisConning() error {
 
 	if err := red.connPool(red.RedisConn.DBnumber); err != nil {
 		return err
@@ -187,7 +196,7 @@ func newPool(cf RedisConn, number int) redis.Pool {
 			if _, err := c.Do("AUTH", cf.PassWord); err != nil { ///密碼　驗證
 				c.Close()
 			}
-			if _, err := c.Do("SELECT", cf.DBnumber); err != nil { /// 選資料庫
+			if _, err := c.Do("SELECT", number); err != nil { /// 選資料庫
 				c.Close()
 			}
 			return c, err
