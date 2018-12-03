@@ -22,8 +22,8 @@ import (
 
 type RedisConnModel struct {
 	// sin
-	// Pool    *redis.Pool
-	// poolist []*redis.Pool
+	//	Pool    *redis.Pool
+	poolist []*redis.Pool
 
 	/// Cluster
 	//clusterpool redisc.Cluster
@@ -33,8 +33,8 @@ type RedisConnModel struct {
 }
 
 const (
-	maxIdle        = 1000
-	maxActive      = 1000
+	maxIdle        = 120000
+	maxActive      = 2400000
 	connectTimeout = 1000
 	ReadTimeout    = 1000
 	writeTimeout   = 1000
@@ -53,11 +53,11 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 	red.RedisConn.PassWord = password
 	// 設定 help mode
 	red.RedisHelper.Hash.mode = single
-
 	red.RedisHelper.List.mode = single
 	red.RedisHelper.Set.mode = single
 	red.RedisHelper.Key.mode = single
 	red.RedisHelper.Other.mode = single
+	// 配連線
 
 }
 
@@ -72,14 +72,20 @@ func (red *RedisConnModel) TimeoutSet(Connect, Read, Write int) {
 }
 func (red *RedisConnModel) DBnumberSet(Total int) {
 	red.RedisConn.DBnumber = Total
+	//  配　total
+	red.RedisHelper.Other.DBnumber = red.RedisConn.DBnumber
+	red.RedisHelper.List.DBnumber = red.RedisConn.DBnumber
+	red.RedisHelper.Hash.DBnumber = red.RedisConn.DBnumber
+	red.RedisHelper.Key.DBnumber = red.RedisConn.DBnumber
+	red.RedisHelper.Set.DBnumber = red.RedisConn.DBnumber
 }
 
 func (red *RedisConnModel) Default(Host, password string) {
 	red.TcpMode()
-	red.HostSet(Host, password)
 	red.MaxConnSet(maxIdle, maxActive)
 	red.DBnumberSet(dbnumber)
 	red.TimeoutSet(connectTimeout, ReadTimeout, writeTimeout)
+	red.HostSet(Host, password)
 }
 
 // var cLocks [n]sync.RWMutex
@@ -88,7 +94,7 @@ func (red *RedisConnModel) Shared() *RedisConnModel {
 	return &RedisConnModel{}
 }
 
-// 連線
+// 開始連線
 func (red *RedisConnModel) RedisConning() error {
 
 	if err := red.connPool(red.RedisConn.DBnumber); err != nil {

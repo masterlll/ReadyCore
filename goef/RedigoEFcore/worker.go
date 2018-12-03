@@ -19,7 +19,7 @@ type work struct {
 }
 
 func (p *work) constructor() *work {
-	return p
+	return &work{}
 }
 func (p *work) Value() EF.Container {
 	p.lock.Lock()

@@ -3,7 +3,6 @@ package RedigoEFcore
 //"fmt"
 
 import (
-	"fmt"
 	"sync"
 
 	EF "github.com/ReadyCore/goef/other"
@@ -19,17 +18,17 @@ type RedisConn struct {
 	ConnectTimeout int    //連線  Timeout
 	ReadTimeout    int    //讀取 Timeout
 	WriteTimeout   int    //寫入 Timeout
-	DBnumber       int    // DB號碼
+	DBnumber       int    // DB　總數
 	Mode           string // 集群 or 一般
 }
 type RedisHelper struct {
-	Pool    *redis.Pool
-	poolist []*redis.Pool
-	Hash    Hash
-	List    List
-	Set     Set
-	Key     Key
-	Other   Other
+	// Pool    *redis.Pool
+	// poolist []*redis.Pool
+	Hash  Hash
+	List  List
+	Set   Set
+	Key   Key
+	Other Other
 	/// Q
 	//Queue Queue
 }
@@ -40,139 +39,102 @@ type RedisHelper struct {
 // }
 
 type Hash struct {
-	work work
-	mode string
+	DBnumber int
+	work     work
+	mode     string
+	connPool *[]*redis.Pool
+}
+
+func (r *Hash) input(Action string, in []interface{}) *work {
+	wo := r.work.constructor()
+	switch r.mode {
+	case single:
+		{
+			wo.hashInput.Input = in
+			wo.hashInput.Action = Action
+			wo.value = wo.hashInput
+		}
+	case Cluster:
+		{
+			wo.hashInput.Input = in
+			wo.hashInput.Action = Action
+			wo.value = wo.hashInput
+		}
+	}
+	return wo
+
 }
 
 func (r *Hash) HGET(table string, key string) *work {
 
 	input, _ := EF.MergeValue("HGET", table, key, nil)
-
-	//r.lock.Lock()
-
-	switch r.mode {
-	case single:
-		{
-
-		}
-	case Cluster:
-		{
-
-		}
-
-	}
-	b := r.work.constructor()
-
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HGET"
-	b.value = b.hashInput
-	b.lock.Unlock()
-	//	defer r.lock.Unlock()
-	return b
+	return r.input("HGET", input)
 
 }
 func (r *Hash) HMGET(table string, key ...interface{}) *work {
 
 	input, _ := EF.MergeValue("HMGET", table, nil, key...)
 
-	//r.lock.Lock()
-	b := r.work.constructor()
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HMGET"
-	b.value = b.hashInput
-	b.lock.Unlock()
-	//	defer r.lock.Unlock()
-	return b
+	return r.input("HMGET", input)
 
 }
 
 func (r *Hash) HGETALL(table string) *work {
 
 	input, _ := EF.MergeValue("HGETALL", table, nil, nil)
-	fmt.Println(input)
-
-	//r.lock.Lock()
-	b := r.work.constructor()
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HGETALL"
-	b.value = b.hashInput
-	b.lock.Unlock()
-	//	defer r.lock.Unlock()
-	return b
+	return r.input("HGETALL", input)
 
 }
 
 func (r *Hash) HDEL(table string, key string) *work {
 
 	input, _ := EF.MergeValue("HDEL", table, key, nil)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HDEL"
-	b.value = b.hashInput
-	b.lock.Unlock()
-
-	return b
+	return r.input("HDEL", input)
 
 }
 func (r *Hash) HEXISTS(table string, key string) *work {
 
 	input, _ := EF.MergeValue("HEXISTS", table, key, nil)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HEXISTS"
-	b.value = b.hashInput
-	b.lock.Unlock()
-	return b
+	return r.input("HEXISTS", input)
 
 }
 func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 	input, _ := EF.MergeValue("HSET", table, key, value...)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-
-	b.hashInput.Input = input
-	b.hashInput.Action = "HSET"
-	b.value = b.hashInput
-	b.lock.Unlock()
-	return b
+	return r.input("HSET", input)
 
 }
 
 type Set struct {
-	work work
-	mode string
-	lock sync.Mutex
+	work     work
+	mode     string
+	DBnumber int
+	lock     sync.Mutex
+}
+
+func (r *Set) input(Action string, in []interface{}) *work {
+	wo := r.work.constructor()
+	switch r.mode {
+	case single:
+		{
+			wo.setInput.Input = in
+			wo.setInput.Action = Action
+			wo.value = wo.setInput
+		}
+	case Cluster:
+		{
+			wo.setInput.Input = in
+			wo.setInput.Action = Action
+			wo.value = wo.setInput
+		}
+	}
+	return wo
+
 }
 
 func (r *Set) SADD(table string, value ...interface{}) *work {
-
 	input, _ := EF.MergeValue("SADD", table, nil, value...)
-
-	fmt.Println(input)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.value = b.setInput
-	b.setInput.Action = "SADD"
-	b.value = b.setInput
-	b.lock.Unlock()
-	return b
+	return r.input("SADD", input)
 
 }
 
@@ -180,112 +142,74 @@ func (r *Set) SCARD(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SCARD", table, key, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.setInput.Action = "SCARD"
-	b.value = b.setInput
-
-	b.lock.Unlock()
-	return b
+	return r.input("SCARD", input)
 
 }
 
 func (r *Set) SDIFF(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SDIFF", table, key, nil)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.setInput.Action = "SDIFF"
-	b.value = b.setInput
-	b.lock.Unlock()
-	return b
+	return r.input("SDIFF", input)
 
 }
 
 func (r *Set) SINTER(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SINTER", table, key, nil)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.setInput.Action = "SINTER"
-	b.value = b.setInput
-	b.lock.Unlock()
-
-	return b
-
+	return r.input("SINTER", input)
 }
 
 func (r *Set) SISMEMBER(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SISMEMBER", table, key, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.value = b.setInput
-	b.setInput.Action = "SISMEMBER"
-	b.lock.Unlock()
-	return b
-
+	return r.input("SISMEMBER", input)
 }
 
 func (r *Set) SMEMBERS(table string) *work {
 
 	input, _ := EF.MergeValue("SMEMBERS", table, nil, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.value = b.setInput
-	b.setInput.Action = "SMEMBERS"
-	b.lock.Unlock()
-
-	return b
+	return r.input("SMEMBERS", input)
 
 }
 
 func (r *Set) SSCAN(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SSCAN", table, key, nil)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.setInput.Input = input
-	b.value = b.setInput
-	b.setInput.Action = "SSCAN"
-	b.lock.Unlock()
-	return b
-
+	return r.input("SSCAN", input)
 }
 
 type List struct {
-	work work
-	mode string
+	work     work
+	DBnumber int
+	mode     string
+}
+
+func (r *List) input(Action string, in []interface{}) *work {
+	wo := r.work.constructor()
+	switch r.mode {
+	case single:
+		{
+			wo.listInput.Input = in
+			wo.listInput.Action = Action
+			wo.value = wo.listInput
+		}
+	case Cluster:
+		{
+			wo.listInput.Input = in
+			wo.listInput.Action = Action
+			wo.value = wo.listInput
+		}
+	}
+	return wo
+
 }
 
 func (r *List) LSET(table string, index string, value ...interface{}) *work {
 
 	input, _ := EF.MergeValue("LSET", table, index, value)
-
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.listInput.Input = input
-	b.listInput.Action = "LSET"
-	b.value = b.listInput
-	b.lock.Unlock()
-	return b
+	return r.input("LSET", input)
 
 }
 
@@ -293,14 +217,7 @@ func (r *List) LPUSH(table string, value interface{}) *work {
 
 	input, _ := EF.MergeValue("LPUSH", table, value, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.listInput.Input = input
-	b.listInput.Action = "LPUSH"
-	b.value = b.listInput
-	b.lock.Unlock()
-	return b
+	return r.input("LPUSH", input)
 
 }
 
@@ -308,14 +225,7 @@ func (r *List) LINDEX(table string, index string) *work {
 
 	input, _ := EF.MergeValue("LINDEX", table, index, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.listInput.Input = input
-	b.listInput.Action = "LINDEX"
-	b.value = b.listInput
-	b.lock.Unlock()
-	return b
+	return r.input("LINDEX", input)
 
 }
 
@@ -323,70 +233,76 @@ func (r *List) LLEN(table string) *work {
 
 	input, _ := EF.MergeValue("LLEN", table, nil, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.listInput.Input = input
-	b.listInput.Action = "LLEN"
-	b.value = b.listInput
-	b.lock.Unlock()
-	return b
+	return r.input("LLEN", input)
 
 }
 
 type Key struct {
-	work work
-	mode string
+	work     work
+	DBnumber int
+	mode     string
+}
+
+func (r *Key) input(Action string, in []interface{}) *work {
+	wo := r.work.constructor()
+	switch r.mode {
+	case single:
+		{
+			wo.keyInput.Input = in
+			wo.keyInput.Action = Action
+			wo.value = wo.keyInput
+		}
+	case Cluster:
+		{
+			wo.keyInput.Input = in
+			wo.keyInput.Action = Action
+			wo.value = wo.keyInput
+		}
+	}
+	return wo
 }
 
 func (r *Key) DEL(table string) *work {
 
 	input, _ := EF.MergeValue("DEL", table, nil, nil)
 
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.keyInput.Input = input
-	b.keyInput.Action = "DEL"
-	b.value = b.keyInput
-
-	b.lock.Unlock()
-	return b
+	return r.input("DEL", input)
 
 }
 
 func (r *Key) EXPIRE(table string, time int) *work {
 
 	input, _ := EF.MergeValue("EXPIRE", table, nil, time)
-	fmt.Println(input)
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.keyInput.Input = input
-	b.keyInput.Action = "EXPIRE"
-	b.value = b.keyInput
-
-	b.lock.Unlock()
-	return b
-
+	return r.input("EXPIRE", input)
 }
 
 type Other struct {
-	work work
-	mode string
+	work     work
+	DBnumber int
+	mode     string
+}
+
+func (r *Other) input(Action string, in []interface{}) *work {
+	wo := r.work.constructor()
+	switch r.mode {
+	case single:
+		{
+			wo.otherInput.Input = in
+			wo.otherInput.Action = Action
+			wo.value = wo.keyInput
+		}
+	case Cluster:
+		{
+			wo.otherInput.Input = in
+			wo.otherInput.Action = Action
+			wo.value = wo.otherInput
+		}
+	}
+	return wo
 }
 
 func (r *Other) SCAN(table string) *work {
 
 	input, _ := EF.MergeValue("SCAN", table, nil, nil)
-	b := r.work.constructor()
-	b.lock.Lock()
-	b.Mode = r.mode
-	b.otherInput.Input = input
-	b.otherInput.Action = "SCAN"
-	b.value = b.otherInput
-	b.lock.Unlock()
-
-	return b
-
+	return r.input("SCAN", input)
 }
