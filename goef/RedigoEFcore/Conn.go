@@ -58,6 +58,11 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 	red.RedisHelper.Key.mode = single
 	red.RedisHelper.Other.mode = single
 	// 配連線
+	red.RedisHelper.Hash.ConnPool = red.poolist
+	red.RedisHelper.List.ConnPool = red.poolist
+	red.RedisHelper.Set.ConnPool = red.poolist
+	red.RedisHelper.Key.ConnPool = red.poolist
+	red.RedisHelper.Other.ConnPool = red.poolist
 
 }
 
@@ -92,6 +97,9 @@ func (red *RedisConnModel) Default(Host, password string) {
 
 func (red *RedisConnModel) Shared() *RedisConnModel {
 	return &RedisConnModel{}
+}
+func (red *RedisConnModel) RDConn(i int) *redis.Pool {
+	return red.Shared().poolist[i]
 }
 
 // 開始連線
@@ -149,10 +157,6 @@ func (red *RedisConnModel) connPool(i int) error {
 		b++
 	}
 	return nil
-}
-
-func (red *RedisConnModel) RDConn(i int) *redis.Pool {
-	return red.Shared().poolist[i]
 }
 
 // func ClustorConn() redis.Conn {

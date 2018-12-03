@@ -1,7 +1,5 @@
 package RedigoEFcore
 
-//"fmt"
-
 import (
 	"sync"
 
@@ -22,68 +20,62 @@ type RedisConn struct {
 	Mode           string // 集群 or 一般
 }
 type RedisHelper struct {
-	// Pool    *redis.Pool
-	// poolist []*redis.Pool
 	Hash  Hash
 	List  List
 	Set   Set
 	Key   Key
 	Other Other
-	/// Q
 	//Queue Queue
 }
-
-// type RDState struct {
-// 	Err   error
-// 	Stats string
-// }
-
 type Hash struct {
 	DBnumber int
 	work     work
 	mode     string
-	connPool *[]*redis.Pool
+	ConnPool []*redis.Pool
+}
+
+// func (r *Hash) Shared() *RedisConnModel {
+// 	return &RedisConnModel{}
+// }
+func (r *Hash) connGet(i int) *redis.Pool {
+	return r.ConnPool[i]
 }
 
 func (r *Hash) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
+	wo.Mode = r.mode
+	wo.hashInput.Input = in
+	wo.hashInput.Action = Action
+	wo.value = wo.hashInput
 	switch r.mode {
 	case single:
 		{
-			wo.hashInput.Input = in
-			wo.hashInput.Action = Action
-			wo.value = wo.hashInput
+			i := r.DBnumber
+			for i == 0 {
+				wo.ConnPool = append(wo.ConnPool, r.connGet(i))
+				i--
+			}
+
 		}
 	case Cluster:
 		{
-			wo.hashInput.Input = in
-			wo.hashInput.Action = Action
-			wo.value = wo.hashInput
 		}
 	}
 	return wo
-
 }
 
 func (r *Hash) HGET(table string, key string) *work {
-
 	input, _ := EF.MergeValue("HGET", table, key, nil)
 	return r.input("HGET", input)
-
 }
 func (r *Hash) HMGET(table string, key ...interface{}) *work {
-
 	input, _ := EF.MergeValue("HMGET", table, nil, key...)
-
 	return r.input("HMGET", input)
-
 }
 
 func (r *Hash) HGETALL(table string) *work {
-
 	input, _ := EF.MergeValue("HGETALL", table, nil, nil)
 	return r.input("HGETALL", input)
-
 }
 
 func (r *Hash) HDEL(table string, key string) *work {
@@ -102,30 +94,36 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 	input, _ := EF.MergeValue("HSET", table, key, value...)
 	return r.input("HSET", input)
-
 }
 
 type Set struct {
 	work     work
 	mode     string
 	DBnumber int
+	ConnPool []*redis.Pool
 	lock     sync.Mutex
 }
 
+func (r *Set) connGet(i int) *redis.Pool {
+	return r.ConnPool[i]
+}
 func (r *Set) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
+	wo.Mode = r.mode
+	wo.setInput.Input = in
+	wo.setInput.Action = Action
+	wo.value = wo.setInput
 	switch r.mode {
 	case single:
 		{
-			wo.setInput.Input = in
-			wo.setInput.Action = Action
-			wo.value = wo.setInput
+			i := r.DBnumber
+			for i == 0 {
+				wo.ConnPool = append(wo.ConnPool, r.connGet(i))
+				i--
+			}
 		}
 	case Cluster:
 		{
-			wo.setInput.Input = in
-			wo.setInput.Action = Action
-			wo.value = wo.setInput
 		}
 	}
 	return wo
@@ -141,41 +139,33 @@ func (r *Set) SADD(table string, value ...interface{}) *work {
 func (r *Set) SCARD(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SCARD", table, key, nil)
-
 	return r.input("SCARD", input)
 
 }
 
 func (r *Set) SDIFF(table string, key string) *work {
-
 	input, _ := EF.MergeValue("SDIFF", table, key, nil)
 	return r.input("SDIFF", input)
 
 }
 
 func (r *Set) SINTER(table string, key string) *work {
-
 	input, _ := EF.MergeValue("SINTER", table, key, nil)
 	return r.input("SINTER", input)
 }
 
 func (r *Set) SISMEMBER(table string, key string) *work {
-
 	input, _ := EF.MergeValue("SISMEMBER", table, key, nil)
-
 	return r.input("SISMEMBER", input)
 }
 
 func (r *Set) SMEMBERS(table string) *work {
-
 	input, _ := EF.MergeValue("SMEMBERS", table, nil, nil)
-
 	return r.input("SMEMBERS", input)
 
 }
 
 func (r *Set) SSCAN(table string, key string) *work {
-
 	input, _ := EF.MergeValue("SSCAN", table, key, nil)
 	return r.input("SSCAN", input)
 }
@@ -183,95 +173,90 @@ func (r *Set) SSCAN(table string, key string) *work {
 type List struct {
 	work     work
 	DBnumber int
+	ConnPool []*redis.Pool
 	mode     string
 }
 
+func (r *List) connGet(i int) *redis.Pool {
+	return r.ConnPool[i]
+}
 func (r *List) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
+	wo.Mode = r.mode
+	wo.listInput.Input = in
+	wo.listInput.Action = Action
+	wo.value = wo.listInput
 	switch r.mode {
 	case single:
 		{
-			wo.listInput.Input = in
-			wo.listInput.Action = Action
-			wo.value = wo.listInput
+			i := r.DBnumber
+			for i == 0 {
+				wo.ConnPool = append(wo.ConnPool, r.connGet(i))
+				i--
+			}
 		}
 	case Cluster:
 		{
-			wo.listInput.Input = in
-			wo.listInput.Action = Action
-			wo.value = wo.listInput
 		}
 	}
 	return wo
-
 }
-
 func (r *List) LSET(table string, index string, value ...interface{}) *work {
-
 	input, _ := EF.MergeValue("LSET", table, index, value)
 	return r.input("LSET", input)
-
 }
-
 func (r *List) LPUSH(table string, value interface{}) *work {
 
 	input, _ := EF.MergeValue("LPUSH", table, value, nil)
-
 	return r.input("LPUSH", input)
-
 }
-
 func (r *List) LINDEX(table string, index string) *work {
-
 	input, _ := EF.MergeValue("LINDEX", table, index, nil)
-
 	return r.input("LINDEX", input)
-
 }
-
 func (r *List) LLEN(table string) *work {
-
 	input, _ := EF.MergeValue("LLEN", table, nil, nil)
-
 	return r.input("LLEN", input)
-
 }
 
 type Key struct {
 	work     work
 	DBnumber int
+	ConnPool []*redis.Pool
 	mode     string
+}
+
+func (r *Key) connGet(i int) *redis.Pool {
+	return r.ConnPool[i]
 }
 
 func (r *Key) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
+	wo.Mode = r.mode
+	wo.keyInput.Input = in
+	wo.keyInput.Action = Action
+	wo.value = wo.keyInput
 	switch r.mode {
 	case single:
 		{
-			wo.keyInput.Input = in
-			wo.keyInput.Action = Action
-			wo.value = wo.keyInput
+			i := r.DBnumber
+			for i == 0 {
+				wo.ConnPool = append(wo.ConnPool, r.connGet(i))
+				i--
+			}
 		}
 	case Cluster:
 		{
-			wo.keyInput.Input = in
-			wo.keyInput.Action = Action
-			wo.value = wo.keyInput
+
 		}
 	}
 	return wo
 }
-
 func (r *Key) DEL(table string) *work {
-
 	input, _ := EF.MergeValue("DEL", table, nil, nil)
-
 	return r.input("DEL", input)
-
 }
-
 func (r *Key) EXPIRE(table string, time int) *work {
-
 	input, _ := EF.MergeValue("EXPIRE", table, nil, time)
 	return r.input("EXPIRE", input)
 }
@@ -279,30 +264,36 @@ func (r *Key) EXPIRE(table string, time int) *work {
 type Other struct {
 	work     work
 	DBnumber int
+	ConnPool []*redis.Pool
 	mode     string
+}
+
+func (r *Other) connGet(i int) *redis.Pool {
+	return r.ConnPool[i]
 }
 
 func (r *Other) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
+	wo.Mode = r.mode
+	wo.otherInput.Input = in
+	wo.otherInput.Action = Action
+	wo.value = wo.otherInput
 	switch r.mode {
 	case single:
 		{
-			wo.otherInput.Input = in
-			wo.otherInput.Action = Action
-			wo.value = wo.keyInput
+			i := r.DBnumber
+			for i == 0 {
+				wo.ConnPool = append(wo.ConnPool, r.connGet(i))
+				i--
+			}
 		}
 	case Cluster:
 		{
-			wo.otherInput.Input = in
-			wo.otherInput.Action = Action
-			wo.value = wo.otherInput
 		}
 	}
 	return wo
 }
-
 func (r *Other) SCAN(table string) *work {
-
 	input, _ := EF.MergeValue("SCAN", table, nil, nil)
 	return r.input("SCAN", input)
 }

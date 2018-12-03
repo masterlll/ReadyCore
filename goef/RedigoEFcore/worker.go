@@ -2,11 +2,13 @@ package RedigoEFcore
 
 import (
 	"sync"
+	"github.com/gomodule/redigo/redis"
 
 	EF "github.com/ReadyCore/goef/other"
 )
 
 type work struct {
+	ConnPool  []*redis.Pool
 	convent    convent
 	lock       sync.Mutex
 	Mode       string
