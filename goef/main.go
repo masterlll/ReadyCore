@@ -2,18 +2,29 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	db "github.com/ReadyCore/goef/RedigoEFcore"
 )
 
 func main() {
 
-	fmt.Println("ss")
+	p := db.RedisConnModel{}
+	p.Default("127.0.0.1:6379", "")
+	p.RedisConning()
 
-	a := db.RedisConnModel{}
-	a.Default("aa", "pp")
-	a.RedisConning()
+	//fmt.Println(p.Hash.HSET("ffd", "bb", "ss").DO(0).Int64ToString())
 
+	//var aa []int
+
+	t1 := time.Now() // get current time
+
+	for i := 1; i <= 10000; i++ {
+		p.Hash.HSET("ffd", strconv.Itoa(i)+"ccc", "ssss").Pipe(0).Value()
+	}
+
+	fmt.Println("App elapsed: ", time.Since(t1))
 	// if err := rd.Shared().InitRedis(); err != nil {
 	// 	fmt.Println("err", err)
 	// }

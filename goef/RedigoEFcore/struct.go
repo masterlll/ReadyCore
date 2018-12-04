@@ -93,7 +93,9 @@ func (r *Hash) HEXISTS(table string, key string) *work {
 func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 
 	input, _ := EF.MergeValue("HSET", table, key, value...)
+
 	return r.input("HSET", input)
+
 }
 
 type Set struct {

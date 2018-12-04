@@ -1,10 +1,5 @@
 package RedigoEFcore
 
-const (
-	ModeRedis   = 0
-	ModeCluster = 1
-)
-
 type Container struct {
 	Action string
 	DB     int
@@ -20,7 +15,7 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 	if com == "HMGET" {
 		//fmt.Println(" table , key ,key")
 		urls = append(urls, table.(string))
-		for _, i := range key.([]string) {
+		for _, i := range val {
 			urls = append(urls, i)
 		}
 		return urls, true
@@ -35,16 +30,17 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 		return urls, true
 	}
 	//table (key)  VALUE1  VALUE1
-	if com == "SADD" || com == "SREM" {
+	if com == "SADD" || com == "SREM" || com == "LPUSH" || com == "RPUSH" || com == "SREM" {
 		//fmt.Println(" key  VALUE1  VALUE1 ")
 		urls = append(urls, table)
 		for _, i := range val {
 			urls = append(urls, i)
 		}
+
 		return urls, true
 
 	}
-	if com == "HSET" {
+	if com == "HSET" || com == "LSET" {
 		//	fmt.Println("table key value")
 		urls = append(urls, table)
 
@@ -60,16 +56,24 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 
 		return urls, true
 	}
+	//  table key(int)
+	if com == "INCRBY" || com == "GETSET" || com == "DECRBY" {
+		//fmt.Println("table key")
+		urls = append(urls, table)
+		urls = append(urls, key.(int))
+
+		return urls, true
+	}
 	//  table key
-	if com == "HGET" || com == "HEXISTS" || com == "HDEL" {
+	if com == "HGET" || com == "HEXISTS" || com == "HDEL" || com == "LINDEX" || com == "SISMEMBER" || com == "SET" {
 		//fmt.Println("table key")
 		urls = append(urls, table)
 		urls = append(urls, key.(string))
 
 		return urls, true
 	}
-	// table
-	if com == "HGETALL" || com == "SMEMBERS" || com == "DEL" {
+	// tables
+	if com == "HGETALL" || com == "SMEMBERS" || com == "DEL" || com == "LLEN" || com == "RPOP" || com == "LPOP" || com == "GET" || com == "EXISTS" || com == "HLEN" || com == "HKEYS" || com == "SPOP" || com == "SCARD" || com == "HVALS" {
 		//	fmt.Println("table ")
 		urls = append(urls, table)
 
@@ -83,6 +87,13 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 		urls = append(urls, "*"+table.(string)+"*")
 		urls = append(urls, "COUNT")
 		urls = append(urls, "10000")
+		return urls, true
+	}
+
+	if com == "EXPIRE" {
+
+		urls = append(urls, table)
+		urls = append(urls, val[0].(int))
 		return urls, true
 	}
 

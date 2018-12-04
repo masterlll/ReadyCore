@@ -26,16 +26,25 @@ type work struct {
 func (p *work) constructor() *work {
 	return &work{}
 }
-func (p *work) Value() EF.Container {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	return p.value
-}
 
-func (p *work) DO(DBnumber int) *convent {
-	return p.doHelper(p.connHelper(DBnumber))
-}
+func (p *work) connHelper(DBnumber int) (Conn redis.Conn) {
 
+	switch p.Mode {
+
+	case single:
+		{
+			Conn = p.ConnPool[DBnumber].Get()
+
+		}
+
+	case Cluster:
+		{
+
+		}
+
+	}
+	return
+}
 func (p *work) doHelper(conn redis.Conn) *convent {
 	rd := DbContext{}
 	a := p.convent.constructor()
@@ -59,41 +68,15 @@ func (p *work) doHelper(conn redis.Conn) *convent {
 	a.value = nil
 	return &a
 }
-
-func (p *work) connHelper(DBnumber int) (Conn redis.Conn) {
-
-	switch p.Mode {
-
-	case single:
-		{
-			Conn = p.ConnPool[DBnumber].Get()
-
-		}
-
-	case Cluster:
-		{
-
-		}
-
-	}
-	return
-}
-
-func (p *work) Pipe(DBnumber int) *convent {
-	return p.pipeHelper(p.connHelper(DBnumber))
-}
-
 func (p *work) pipeHelper(conn redis.Conn) *convent {
 
 	rd := DbContext{}
 
 	a := p.convent.constructor()
-
 	if p.hashInput.Input != nil {
 		for i := range rd.Pipe(conn, p.Mode, p.hashInput) {
 			a.value = i
 		}
-		defer p.lock.Unlock()
 		return &a
 	}
 	if p.setInput.Input != nil {
@@ -101,7 +84,6 @@ func (p *work) pipeHelper(conn redis.Conn) *convent {
 		for i := range rd.Pipe(conn, p.Mode, p.setInput) {
 			a.value = i
 		}
-		defer p.lock.Unlock()
 		return &a
 	}
 
@@ -109,25 +91,34 @@ func (p *work) pipeHelper(conn redis.Conn) *convent {
 
 		for i := range rd.Pipe(conn, p.Mode, p.listInput) {
 			a.value = i
-
 		}
-		defer p.lock.Unlock()
 		return &a
 	}
-
 	if p.keyInput.Input != nil {
 		for i := range rd.Pipe(conn, p.Mode, p.keyInput) {
 			a.value = i
 		}
-
-		defer p.lock.Unlock()
 		return &a
-
 	}
-
 	a.value = nil
 
 	return &a
+}
+
+func (p *work) Value() EF.Container {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	return p.value
+}
+
+func (p *work) DO(DBnumber int) *convent {
+	return p.doHelper(p.connHelper(DBnumber))
+}
+
+func (p *work) Pipe(DBnumber int) *convent {
+
+	return p.pipeHelper(p.connHelper(DBnumber))
+
 }
 
 func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
@@ -361,6 +352,7 @@ func (p *convent) Value() (interface{}, error) {
 		return nil, p.value.(redis.Error)
 	case error:
 		return nil, p.value.(error)
+
 	default:
 		return "", errors.New("type == nuknown   ,Value conving err")
 	}
