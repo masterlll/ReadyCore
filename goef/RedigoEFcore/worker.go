@@ -1,14 +1,17 @@
 package RedigoEFcore
 
 import (
+	"errors"
+	"strconv"
 	"sync"
+
 	"github.com/gomodule/redigo/redis"
 
 	EF "github.com/ReadyCore/goef/other"
 )
 
 type work struct {
-	ConnPool  []*redis.Pool
+	ConnPool   []*redis.Pool
 	convent    convent
 	lock       sync.Mutex
 	Mode       string
@@ -30,50 +33,64 @@ func (p *work) Value() EF.Container {
 }
 
 func (p *work) DO(DBnumber int) *convent {
-	rd := DbContext{}
+	return p.doHelper(p.connHelper(DBnumber))
+}
 
-	p.lock.Lock()
+func (p *work) doHelper(conn redis.Conn) *convent {
+	rd := DbContext{}
 	a := p.convent.constructor()
 	if p.setInput.Input != nil {
-
-		a.value = <-rd.DO(DBnumber, p.setInput, p.Mode)
-		defer p.lock.Unlock()
+		a.value = <-rd.DO(conn, p.Mode, p.setInput)
 		return &a
 	}
 
 	if p.hashInput.Input != nil {
-		a.value = <-rd.DO(DBnumber, p.hashInput, p.Mode)
-		defer p.lock.Unlock()
+		a.value = <-rd.DO(conn, p.Mode, p.hashInput)
 		return &a
 	}
-
 	if p.listInput.Input != nil {
-
-		a.value = <-rd.DO(DBnumber, p.listInput, p.Mode)
-		defer p.lock.Unlock()
+		a.value = <-rd.DO(conn, p.Mode, p.listInput)
 		return &a
-
 	}
-
 	if p.keyInput.Input != nil {
-		a.value = <-rd.DO(DBnumber, p.keyInput, p.Mode)
-		defer p.lock.Unlock()
+		a.value = <-rd.DO(conn, p.Mode, p.keyInput)
 		return &a
 	}
-
 	a.value = nil
-
-	defer p.lock.Unlock()
 	return &a
 }
 
+func (p *work) connHelper(DBnumber int) (Conn redis.Conn) {
+
+	switch p.Mode {
+
+	case single:
+		{
+			Conn = p.ConnPool[DBnumber].Get()
+
+		}
+
+	case Cluster:
+		{
+
+		}
+
+	}
+	return
+}
+
 func (p *work) Pipe(DBnumber int) *convent {
+	return p.pipeHelper(p.connHelper(DBnumber))
+}
+
+func (p *work) pipeHelper(conn redis.Conn) *convent {
+
 	rd := DbContext{}
-	p.lock.Lock()
+
 	a := p.convent.constructor()
 
 	if p.hashInput.Input != nil {
-		for i := range rd.Pipe(DBnumber, p.hashInput) {
+		for i := range rd.Pipe(conn, p.Mode, p.hashInput) {
 			a.value = i
 		}
 		defer p.lock.Unlock()
@@ -81,7 +98,7 @@ func (p *work) Pipe(DBnumber int) *convent {
 	}
 	if p.setInput.Input != nil {
 
-		for i := range rd.Pipe(DBnumber, p.setInput) {
+		for i := range rd.Pipe(conn, p.Mode, p.setInput) {
 			a.value = i
 		}
 		defer p.lock.Unlock()
@@ -90,17 +107,16 @@ func (p *work) Pipe(DBnumber int) *convent {
 
 	if p.listInput.Input != nil {
 
-		for i := range rd.Pipe(DBnumber, p.listInput) {
+		for i := range rd.Pipe(conn, p.Mode, p.listInput) {
 			a.value = i
 
 		}
 		defer p.lock.Unlock()
 		return &a
-
 	}
 
 	if p.keyInput.Input != nil {
-		for i := range rd.Pipe(DBnumber, p.keyInput) {
+		for i := range rd.Pipe(conn, p.Mode, p.keyInput) {
 			a.value = i
 		}
 
@@ -111,7 +127,6 @@ func (p *work) Pipe(DBnumber int) *convent {
 
 	a.value = nil
 
-	defer p.lock.Unlock()
 	return &a
 }
 
@@ -231,29 +246,29 @@ type Queue struct {
 	lock    sync.Mutex
 }
 
-func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
-	rd := DbContext{}
-	p.lock.Lock()
-	ch := make(chan *convent)
-	ok := make(chan bool)
-	go func() {
-		<-ok
-		close(ch)
-	}()
-	go func() {
-		for i := range rd.Pipe(DBnumber, twice...) {
-			a := p.convent.constructor()
-			a.value = i
-			//	fmt.Println(a)
-			ch <- &a
-			//fmt.Println("hi")
-		}
-		ok <- true
-	}()
+// func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
+// 	rd := DbContext{}
+// 	p.lock.Lock()
+// 	ch := make(chan *convent)
+// 	ok := make(chan bool)
+// 	go func() {
+// 		<-ok
+// 		close(ch)
+// 	}()
+// 	go func() {
+// 		for i := range rd.Pipe(DBnumber, twice...) {
+// 			a := p.convent.constructor()
+// 			a.value = i
+// 			//	fmt.Println(a)
+// 			ch <- &a
+// 			//fmt.Println("hi")
+// 		}
+// 		ok <- true
+// 	}()
 
-	defer p.lock.Unlock()
-	return ch
-}
+// 	defer p.lock.Unlock()
+// 	return ch
+// }
 
 // 封印
 // func (p *Queue) QueuePipeTWice(DBnumber int, twice ...[]EF.Container) chan *convent {
@@ -288,21 +303,118 @@ func (p *convent) constructor() convent {
 	return a
 }
 
-func (p *convent) Int64() int64 {
+func (p *convent) Int64() (int64, error) {
 
 	p.lock.Lock()
-	a := p.value.(int64)
 	defer p.lock.Unlock()
-	return a
+
+	switch p.value.(type) {
+	case int64:
+		return p.value.(int64), nil
+	case string:
+		return 0, errors.New("type == string ,Value conving err")
+	case nil:
+		return 0, errors.New("type == nil ,Value conving err")
+	case redis.Error:
+		return 0, p.value.(redis.Error)
+	case error:
+		return 0, p.value.(error)
+	default:
+		return 0, errors.New("type == nuknown   ,Value conving err")
+	}
+
 }
-func (p *convent) Value() interface{} {
+func (p *convent) Int64ToString() (string, error) {
+
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	return p.value
+
+	switch p.value.(type) {
+	case int64:
+		a := strconv.FormatInt(p.value.(int64), 10)
+		return a, nil
+	case string:
+		return "", errors.New("type == string ,Value conving err")
+	case nil:
+		return "", errors.New("type == nil ,Value conving err")
+	case redis.Error:
+		return "", p.value.(redis.Error)
+	case error:
+		return "", p.value.(error)
+	default:
+		return "", errors.New("type == nuknown   ,Value conving err")
+	}
+
 }
-func (p *convent) ToString() string {
+func (p *convent) Value() (interface{}, error) {
+
 	p.lock.Lock()
-	a := p.value.(string)
 	defer p.lock.Unlock()
-	return a
+	switch p.value.(type) {
+	case interface{}:
+		return p.value, nil
+	case string:
+		return nil, errors.New("type == string ,Value conving err")
+	case nil:
+		return p.value, nil
+	case redis.Error:
+		return nil, p.value.(redis.Error)
+	case error:
+		return nil, p.value.(error)
+	default:
+		return "", errors.New("type == nuknown   ,Value conving err")
+	}
+
+}
+
+func (p *convent) ByteArray() ([]byte, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	data, ok := p.value.([]byte)
+	if !ok {
+		return nil, errors.New("type == nuknown  ,Value conving err")
+	}
+	return data, nil
+}
+
+func (p *convent) ToString() (string, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	switch p.value.(type) {
+	case string:
+		a := p.value.(string)
+		return a, nil
+	case nil:
+		return "", errors.New("type == nil ,Value conving err")
+	case redis.Error:
+		return "", p.value.(redis.Error)
+	case []byte:
+		return "", errors.New("type == []byte ,Value conving err")
+	case error:
+		return "", p.value.(error)
+	default:
+		return "", errors.New("type == nuknown   ,Value conving err")
+	}
+
+}
+
+func (p *convent) ByteTostring() (string, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	switch p.value.(type) {
+	case []byte:
+		return string(p.value.([]byte)), nil
+	case string:
+		return p.value.(string), nil
+	case nil:
+		return "", errors.New("type == nil ,Value conving err")
+	case redis.Error:
+		return "", p.value.(redis.Error)
+	case error:
+		return "", p.value.(error)
+	default:
+		return "", errors.New("type == nuknown   ,Value conving err")
+	}
+
 }

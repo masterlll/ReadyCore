@@ -12,8 +12,7 @@ func main() {
 
 	a := db.RedisConnModel{}
 	a.Default("aa", "pp")
-	//a.RedisConning()
-	fmt.Println(a.Mode)
+	a.RedisConning()
 
 	// if err := rd.Shared().InitRedis(); err != nil {
 	// 	fmt.Println("err", err)

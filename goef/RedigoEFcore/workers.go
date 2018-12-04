@@ -4,63 +4,61 @@ import (
 	"fmt"
 
 	EF "github.com/ReadyCore/goef/other"
+	"github.com/gomodule/redigo/redis"
 	//"github.com/gomodule/redigo/redis"
 )
 
 type RedisMode struct {
 }
 
-func (S *RedisMode) pipe(DB int, input ...EF.Container) chan interface{} {
+func (S *RedisMode) pipe(Conn redis.Conn, input ...EF.Container) chan interface{} {
 
 	data := make(chan interface{})
-	//ok := make(chan bool)
-	// c := RDConn(DB).Get()
-	// go func(input []EF.Container) {
-	// 	for _, p := range input {
-	// 		err2 := c.Send(p.Action, p.Input...)
-	// 		if err2 != nil {
-	// 			fmt.Println("redis  failed:", err2)
-	// 		}
-	// 	}
-	// 	if err := c.Flush(); err != nil { // 清空記憶體　發送
-	// 		fmt.Println("err :", err)
-	// 	}
-	// 	for i := 1; i <= len(input); i++ {
-	// 		re, err := c.Receive()
-	// 		if err != nil {
-	// 			fmt.Println("redis  failed:", err)
-	// 		}
-	// 		data <- re
-	// 	}
+	ok := make(chan bool)
+	//	c := RDConn(DB).Get()
+	go func(input []EF.Container) {
+		for _, p := range input {
+			err2 := Conn.Send(p.Action, p.Input...)
+			if err2 != nil {
+				fmt.Println("redis  failed:", err2)
+			}
+		}
+		if err := Conn.Flush(); err != nil { // 清空記憶體　發送
+			fmt.Println("err :", err)
+		}
+		for i := 1; i <= len(input); i++ {
+			re, err := Conn.Receive()
+			if err != nil {
+				fmt.Println("redis  failed:", err)
+			}
+			data <- re
+		}
+		ok <- true
+	}(input)
+	go func() {
+		<-ok
+		Conn.Close()
+		close(data)
 
-	// 	ok <- true
-	// }(input)
-	// go func() {
-	// 	<-ok
-	// 	c.Close()
-	// 	close(data)
-
-	// }()
+	}()
 	return data
 }
 
-func (S *RedisMode) do(DB int, In EF.Container) chan interface{} {
+func (S *RedisMode) do(Conn redis.Conn, In EF.Container) chan interface{} {
 	fmt.Println("  redis   do ")
 	DO := make(chan interface{})
-	// c := RDConn(DB).Get()
 
-	// res, err := c.Do(In.Action, In.Input...)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// go func() {
-	// 	DO <- res
-	// 	c.Close()
-	// 	close(DO)
-	// }()
+	res, err := Conn.Do(In.Action, In.Input...)
+	if err != nil {
+		fmt.Println(err)
+	}
+	go func() {
+		DO <- res
+		Conn.Close()
+		close(DO)
+	}()
 	return DO
 }
-
 func (S *RedisMode) pipetwice(DB int, input ...[]EF.Container) chan interface{} {
 
 	data := make(chan interface{})
