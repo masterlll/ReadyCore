@@ -2,6 +2,7 @@ package RedigoEFcore
 
 import (
 	"errors"
+
 	"strconv"
 	"sync"
 
@@ -11,10 +12,10 @@ import (
 )
 
 type work struct {
-	ConnPool   []*redis.Pool
 	convent    convent
 	lock       sync.Mutex
 	Mode       string
+	connKey    string
 	value      EF.Container
 	hashInput  EF.Container
 	setInput   EF.Container
@@ -27,61 +28,43 @@ func (p *work) constructor() *work {
 	return &work{}
 }
 
-func (p *work) connHelper(DBnumber int) (Conn redis.Conn) {
-
-	switch p.Mode {
-
-	case single:
-		{
-			Conn = p.ConnPool[DBnumber].Get()
-
-		}
-
-	case Cluster:
-		{
-
-		}
-
-	}
-	return
-}
-func (p *work) doHelper(conn redis.Conn) *convent {
+func (p *work) doHelper(dbnumber int) *convent {
 	rd := DbContext{}
 	a := p.convent.constructor()
 	if p.setInput.Input != nil {
-		a.value = <-rd.DO(conn, p.Mode, p.setInput)
+		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.setInput)
+
 		return &a
 	}
-
 	if p.hashInput.Input != nil {
-		a.value = <-rd.DO(conn, p.Mode, p.hashInput)
+		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.hashInput)
 		return &a
 	}
 	if p.listInput.Input != nil {
-		a.value = <-rd.DO(conn, p.Mode, p.listInput)
+		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.listInput)
 		return &a
 	}
 	if p.keyInput.Input != nil {
-		a.value = <-rd.DO(conn, p.Mode, p.keyInput)
+		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.keyInput)
 		return &a
 	}
 	a.value = nil
 	return &a
 }
-func (p *work) pipeHelper(conn redis.Conn) *convent {
+func (p *work) pipeHelper(dbnumber int) *convent {
 
 	rd := DbContext{}
-
 	a := p.convent.constructor()
 	if p.hashInput.Input != nil {
-		for i := range rd.Pipe(conn, p.Mode, p.hashInput) {
+		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.hashInput) {
 			a.value = i
 		}
+
 		return &a
 	}
 	if p.setInput.Input != nil {
 
-		for i := range rd.Pipe(conn, p.Mode, p.setInput) {
+		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.setInput) {
 			a.value = i
 		}
 		return &a
@@ -89,13 +72,13 @@ func (p *work) pipeHelper(conn redis.Conn) *convent {
 
 	if p.listInput.Input != nil {
 
-		for i := range rd.Pipe(conn, p.Mode, p.listInput) {
+		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.listInput) {
 			a.value = i
 		}
 		return &a
 	}
 	if p.keyInput.Input != nil {
-		for i := range rd.Pipe(conn, p.Mode, p.keyInput) {
+		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.keyInput) {
 			a.value = i
 		}
 		return &a
@@ -112,12 +95,12 @@ func (p *work) Value() EF.Container {
 }
 
 func (p *work) DO(DBnumber int) *convent {
-	return p.doHelper(p.connHelper(DBnumber))
+	return p.doHelper(DBnumber)
 }
 
 func (p *work) Pipe(DBnumber int) *convent {
 
-	return p.pipeHelper(p.connHelper(DBnumber))
+	return p.pipeHelper(DBnumber)
 
 }
 
@@ -232,57 +215,6 @@ func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 	return ch1
 }
 
-type Queue struct {
-	convent convent
-	lock    sync.Mutex
-}
-
-// func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
-// 	rd := DbContext{}
-// 	p.lock.Lock()
-// 	ch := make(chan *convent)
-// 	ok := make(chan bool)
-// 	go func() {
-// 		<-ok
-// 		close(ch)
-// 	}()
-// 	go func() {
-// 		for i := range rd.Pipe(DBnumber, twice...) {
-// 			a := p.convent.constructor()
-// 			a.value = i
-// 			//	fmt.Println(a)
-// 			ch <- &a
-// 			//fmt.Println("hi")
-// 		}
-// 		ok <- true
-// 	}()
-
-// 	defer p.lock.Unlock()
-// 	return ch
-// }
-
-// 封印
-// func (p *Queue) QueuePipeTWice(DBnumber int, twice ...[]EF.Container) chan *convent {
-// 	rd := db.DbContext{}
-// 	p.lock.Lock()
-// 	ch := make(chan *convent)
-// 	ok := make(chan bool)
-// 	go func() {
-// 		for i := range rd.PipeTwice(DBnumber, twice...) {
-// 			a := p.convent.constructor()
-// 			a.value = i
-// 			ch <- &a
-// 		}
-// 		ok <- true
-
-// 	}()
-// 	go func() {
-// 		<-ok
-// 		close(ch)
-// 	}()
-// 	defer p.lock.Unlock()
-// 	return ch
-// }
 
 type convent struct {
 	lock  sync.Mutex

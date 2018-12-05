@@ -2,7 +2,6 @@ package RedigoEFcore
 
 import (
 	EF "github.com/ReadyCore/goef/other"
-	"github.com/gomodule/redigo/redis"
 )
 
 //	"fmt"
@@ -14,16 +13,49 @@ type DbContext struct {
 	//	ClusterMode
 }
 
-func (red *DbContext) Pipe(Conn redis.Conn, Mode string, in ...EF.Container) chan interface{} {
+func (red *DbContext) Pipe(connkey string, Mode string, DBnumber int, in ...EF.Container) chan interface{} {
 
-	return red.pipe(Conn, in...)
+	switch Mode {
+	case single:
+		{
+			//for DBnumber == 0 {
 
+			return red.pipe(connGet(connkey, DBnumber), in...)
+
+			//wo.ConnPool = append(wo.ConnPool, connGet(r.connkey, i))
+			//fmt.Println("csc", wo.ConnPool[0].Get())
+			//DBnumber--
+			//}
+
+		}
+	case Cluster:
+		{
+		}
+	}
+	return nil
 }
 
-func (red *DbContext) DO(Conn redis.Conn, Mode string, in EF.Container) chan interface{} {
+func (red *DbContext) DO(key string, Mode string, DBnumber int, in EF.Container) chan interface{} {
+
+	switch Mode {
+	case single:
+		{
+			//for DBnumber == 0 {
+			return red.do(connGet("test123", DBnumber), in)
+
+			//wo.ConnPool = append(wo.ConnPool, connGet(r.connkey, i))
+			//fmt.Println("csc", wo.ConnPool[0].Get())
+			//DBnumber--
+			//}
+
+		}
+	case Cluster:
+		{
+		}
+	}
 
 	//	if Mode != EF.ModeCluster {
-	return red.do(Conn, in)
+	return nil
 	//	}
 	//	return red.ClusterMode.do(DB, in)
 

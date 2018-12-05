@@ -6,6 +6,7 @@ import (
 	"time"
 
 	db "github.com/ReadyCore/goef/RedigoEFcore"
+	ef "github.com/ReadyCore/goef/other"
 )
 
 func main() {
@@ -16,13 +17,21 @@ func main() {
 
 	//fmt.Println(p.Hash.HSET("ffd", "bb", "ss").DO(0).Int64ToString())
 
-	//var aa []int
-
 	t1 := time.Now() // get current time
 
-	for i := 1; i <= 10000; i++ {
-		p.Hash.HSET("ffd", strconv.Itoa(i)+"ccc", "ssss").Pipe(0).Value()
+	var aa []ef.Container
+	for i := 1; i <= 1000000; i++ {
+		//p.Hash.HSET("ffd", strconv.Itoa(i)+"cdcc", "ssss").Pipe(0)
+		aa = append(aa, p.Hash.HSET("ffd", strconv.Itoa(i)+"cdcc", "ssss").Value())
 	}
+	fmt.Println("go")
+	for m := range p.Queue.QueuePipe(0, aa) {
+		m = m
+	}
+	// for i := 1; i <= 10000; i++ {
+	// 	go p.Hash.HSET("ffd", strconv.Itoa(i)+"ccc", "ssss").Pipe(0)
+
+	// }
 
 	fmt.Println("App elapsed: ", time.Since(t1))
 	// if err := rd.Shared().InitRedis(); err != nil {

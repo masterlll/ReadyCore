@@ -2,7 +2,6 @@ package RedigoEFcore
 
 import (
 	"fmt"
-	"time"
 
 	EF "github.com/ReadyCore/goef/other"
 	"github.com/gomodule/redigo/redis"
@@ -15,67 +14,35 @@ type RedisMode struct {
 func (S *RedisMode) pipe(Conn redis.Conn, input ...EF.Container) chan interface{} {
 
 	data := make(chan interface{})
-	//ok := make(chan bool)
-	ok := make(chan redis.Conn)
-	t1 := time.Now()
+	ok := make(chan bool)
+
 	go func(input []EF.Container, C redis.Conn) {
 
 		for _, p := range input {
 			err2 := C.Send(p.Action, p.Input...)
 			if err2 != nil {
-				//	logger.Err(err2, p.Action+" pipe().send")
-				data <- err2
-				continue
+				fmt.Println("redis  failed:", err2)
 			}
-			if err := C.Flush(); err != nil { // 清空記憶體　發送
-				//logger.Err(err, " pipe().Flush")
-				data <- err
-				continue
-			}
+		}
+		if err := C.Flush(); err != nil { // 清空記憶體　發送
+			fmt.Println("err :", err)
+		}
+		for i := 1; i <= len(input); i++ {
 			re, err := C.Receive()
 			if err != nil {
-				//	logger.Err(err, " pipe().Receive")
-				data <- err
-				continue
+				fmt.Println("redis  failed:", err)
 			}
 			data <- re
 		}
-		ok <- C
-		close(ok)
+		ok <- true
 	}(input, Conn)
 	go func() {
-		c := <-ok
-		c.Close()
+		<-ok
+		Conn.Close()
 		close(data)
-	}()
-	return data
-	//	c := RDConn(DB).Get()
-	// go func(input []EF.Container, C redis.Conn) {
-	// 	for _, p := range input {
-	// 		err2 := C.Send(p.Action, p.Input...)
-	// 		if err2 != nil {
-	// 			fmt.Println("redis  failed:", err2)
-	// 		}
-	// 	}
-	// 	if err := C.Flush(); err != nil { // 清空記憶體　發送
-	// 		fmt.Println("err :", err)
-	// 	}
-	// 	for i := 1; i <= len(input); i++ {
-	// 		re, err := C.Receive()
-	// 		if err != nil {
-	// 			fmt.Println("redis  failed:", err)
-	// 		}
-	// 		data <- re
-	// 	}
-	// 	ok <- true
-	// }(input, Conn)
-	// go func() {
-	// 	<-ok
-	// 	Conn.Close()
-	// 	close(data)
 
-	// }()
-	fmt.Println("App elapsed: ", time.Since(t1))
+	}()
+
 	return data
 }
 

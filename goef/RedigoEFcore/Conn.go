@@ -20,10 +20,16 @@ import (
 // 	work                work
 // }
 
+var connmap map[string][]*redis.Pool
+
+func init() {
+	connmap = make(map[string][]*redis.Pool)
+}
+
 type RedisConnModel struct {
 	// sin
 	//	Pool    *redis.Pool
-	Poolist []*redis.Pool
+	//	Poolist []*redis.Pool
 
 	/// Cluster
 	//clusterpool redisc.Cluster
@@ -34,7 +40,7 @@ type RedisConnModel struct {
 
 const (
 	maxIdle        = 120000
-	maxActive      = 2400000
+	maxActive      = 240000
 	connectTimeout = 1000
 	ReadTimeout    = 1000
 	writeTimeout   = 1000
@@ -57,6 +63,7 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 	red.RedisHelper.Set.mode = single
 	red.RedisHelper.Key.mode = single
 	red.RedisHelper.Other.mode = single
+	red.RedisHelper.Queue.mode = single
 
 }
 
@@ -72,11 +79,7 @@ func (red *RedisConnModel) TimeoutSet(Connect, Read, Write int) {
 func (red *RedisConnModel) DBnumberSet(Total int) {
 	red.RedisConn.DBnumber = Total
 	//  配　total
-	red.RedisHelper.Other.DBnumber = red.RedisConn.DBnumber
-	red.RedisHelper.List.DBnumber = red.RedisConn.DBnumber
-	red.RedisHelper.Hash.DBnumber = red.RedisConn.DBnumber
-	red.RedisHelper.Key.DBnumber = red.RedisConn.DBnumber
-	red.RedisHelper.Set.DBnumber = red.RedisConn.DBnumber
+
 }
 
 func (red *RedisConnModel) Default(Host, password string) {
@@ -98,19 +101,21 @@ func (red *RedisConnModel) Default(Host, password string) {
 
 // 開始連線
 func (red *RedisConnModel) RedisConning() error {
-	fmt.Println("ok?")
 
-	if err := red.connPool(red.RedisConn.DBnumber); err != nil {
+	conn, err := red.connPool(red.RedisConn.DBnumber)
+	if err != nil {
 		return err
 	}
-	fmt.Println("ok?")
 	// 配連線
-	red.RedisHelper.Hash.ConnPool = red.Poolist
-	red.RedisHelper.List.ConnPool = red.Poolist
-	red.RedisHelper.Set.ConnPool = red.Poolist
-	red.RedisHelper.Key.ConnPool = red.Poolist
-	red.RedisHelper.Other.ConnPool = red.Poolist
 
+	connmap["test123"] = conn
+
+	red.RedisHelper.Hash.connkey = "test123"
+	red.RedisHelper.List.connkey = "test123"
+	red.RedisHelper.Set.connkey = "test123"
+	red.RedisHelper.Key.connkey = "test123"
+	red.RedisHelper.Other.connkey = "test123"
+	red.RedisHelper.Queue.connkey = "test123"
 	return nil
 }
 
@@ -130,9 +135,10 @@ func (red *RedisConnModel) RedisConning() error {
 // 	return nil
 // }
 
-func (red *RedisConnModel) connPool(i int) error {
+func (red *RedisConnModel) connPool(i int) (Connpool []*redis.Pool, err error) {
 
 	var b int
+
 	for b <= i {
 		fmt.Println("  db  number  ", b)
 		// //cf.ProxyAddress = "127.0.0.1:6379"
@@ -153,18 +159,19 @@ func (red *RedisConnModel) connPool(i int) error {
 		// fmt.Println("cf", cf)
 		conn := newPool(red.RedisConn, b) /////設定連線
 
-		err := conn.TestOnBorrow(conn.Get(), time.Now())
+		err = conn.TestOnBorrow(conn.Get(), time.Now())
 		if err != nil {
 			fmt.Println(err)
-			return err
+			return
 		}
-
-		red.Poolist = append(red.Poolist, &conn)
-		fmt.Println("ss", red.Poolist)
+		Connpool = append(Connpool, &conn)
 		b++
 	}
-	fmt.Println("aa")
-	return nil
+	return
+}
+
+func connGet(key string, dbnumber int) redis.Conn {
+	return connmap[key][dbnumber].Get()
 }
 
 // func ClustorConn() redis.Conn {
