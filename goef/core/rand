@@ -1,0 +1,13 @@
+	// //cf.ProxyAddress = "127.0.0.1:6379"
+		// cf.PassWord = "12345678"
+		// //c
+		// //連線ＴＹＰＥ , 最大閒置連線　，　最大連線
+		// cf.ConnType = "tcp"
+		// cf.MaxIdle = 120000
+		// cf.MaxActive = 2400000
+		// /// 連線　　讀取　寫入　的逾時
+		// cf.ConnectTimeout = 10000
+		// cf.ReadTimeout = 1000
+		// cf.WriteTimeout = 1000
+		// //// 選擇ＤＢ　０,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+		// cf.DBnumber = b

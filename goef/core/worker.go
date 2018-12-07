@@ -215,7 +215,6 @@ func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 	return ch1
 }
 
-
 type convent struct {
 	lock  sync.Mutex
 	value interface{}

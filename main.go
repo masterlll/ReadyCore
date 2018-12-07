@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	db "github.com/ReadyCore/goef/RedigoEFcore"
+	db "github.com/ReadyCore/goef/core"
 	ef "github.com/ReadyCore/goef/other"
 )
 
@@ -13,7 +13,10 @@ func main() {
 
 	p := db.RedisConnModel{}
 	p.Default("127.0.0.1:6379", "")
+	p.Auth(false)
 	p.RedisConning()
+
+	fmt.Println(p.Ping(), "ping ")
 
 	//fmt.Println(p.Hash.HSET("ffd", "bb", "ss").DO(0).Int64ToString())
 
@@ -30,9 +33,7 @@ func main() {
 	}
 	// for i := 1; i <= 10000; i++ {
 	// 	go p.Hash.HSET("ffd", strconv.Itoa(i)+"ccc", "ssss").Pipe(0)
-
 	// }
-
 	fmt.Println("App elapsed: ", time.Since(t1))
 	// if err := rd.Shared().InitRedis(); err != nil {
 	// 	fmt.Println("err", err)

@@ -9,14 +9,19 @@ import (
 type RedisConn struct {
 	ProxyAddress   string // host
 	PassWord       string // 密碼
+	connKey        string // 連結KEY
 	MaxIdle        int    // 最大閒置連線
 	MaxActive      int    // 最大連線
 	ConnType       string //連線 模式 TCP ..
+	IdleTimeout    int    // 閒置連線逾時
 	ConnectTimeout int    //連線  Timeout
 	ReadTimeout    int    //讀取 Timeout
 	WriteTimeout   int    //寫入 Timeout
 	DBnumber       int    // DB　總數
 	Mode           string // 集群 or 一般
+	Wait           bool   //等待
+	auth           bool   //密碼驗證
+
 }
 type RedisHelper struct {
 	Hash  Hash
@@ -34,10 +39,6 @@ type Hash struct {
 	//ConnPool []*redis.Pool
 }
 
-// func (r *Hash) Shared() *RedisConnModel {
-// 	return &RedisConnModel{}
-// }
-
 func (r *Hash) input(Action string, in []interface{}) *work {
 	wo := r.work.constructor()
 	wo.Mode = r.mode
@@ -45,21 +46,6 @@ func (r *Hash) input(Action string, in []interface{}) *work {
 	wo.hashInput.Action = Action
 	wo.value = wo.hashInput
 	wo.connKey = r.connkey
-	// switch r.mode {
-	// case single:
-	// 	{
-	// 		i := r.DBnumber
-	// 		for i == 0 {
-	// 			wo.ConnPool = append(wo.ConnPool, connGet(r.connkey, i))
-	// 			//fmt.Println("csc", wo.ConnPool[0].Get())
-	// 			i--
-	// 		}
-
-	// 	}
-	// case Cluster:
-	// 	{
-	// 	}
-	// }
 	return wo
 }
 
@@ -263,9 +249,7 @@ func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
 		for i := range rd.Pipe(p.connkey, p.mode, DBnumber, twice...) {
 			a := p.convent.constructor()
 			a.value = i
-			//	fmt.Println(a)
 			ch <- &a
-			//fmt.Println("hi")
 		}
 		ok <- true
 	}()
