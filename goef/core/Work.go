@@ -2,13 +2,11 @@ package RedigoEFcore
 
 import (
 	"errors"
-
 	"strconv"
 	"sync"
 
-	"github.com/gomodule/redigo/redis"
-
 	EF "github.com/ReadyCore/goef/other"
+	"github.com/gomodule/redigo/redis"
 )
 
 type work struct {
@@ -28,66 +26,6 @@ func (p *work) constructor() *work {
 	return &work{}
 }
 
-func (p *work) doHelper(dbnumber int) *convent {
-	rd := DbContext{}
-	a := p.convent.constructor()
-	if p.setInput.Input != nil {
-		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.setInput)
-
-		return &a
-	}
-	if p.hashInput.Input != nil {
-		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.hashInput)
-		return &a
-	}
-	if p.listInput.Input != nil {
-		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.listInput)
-		return &a
-	}
-	if p.keyInput.Input != nil {
-		a.value = <-rd.DO(p.connKey, p.Mode, dbnumber, p.keyInput)
-		return &a
-	}
-	a.value = nil
-	return &a
-}
-func (p *work) pipeHelper(dbnumber int) *convent {
-
-	rd := DbContext{}
-	a := p.convent.constructor()
-	if p.hashInput.Input != nil {
-		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.hashInput) {
-			a.value = i
-		}
-
-		return &a
-	}
-	if p.setInput.Input != nil {
-
-		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.setInput) {
-			a.value = i
-		}
-		return &a
-	}
-
-	if p.listInput.Input != nil {
-
-		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.listInput) {
-			a.value = i
-		}
-		return &a
-	}
-	if p.keyInput.Input != nil {
-		for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.keyInput) {
-			a.value = i
-		}
-		return &a
-	}
-	a.value = nil
-
-	return &a
-}
-
 func (p *work) Value() EF.Container {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -99,121 +37,31 @@ func (p *work) DO(DBnumber int) *convent {
 }
 
 func (p *work) Pipe(DBnumber int) *convent {
-
 	return p.pipeHelper(DBnumber)
-
 }
-
 func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
-	rd := DbContext{}
-
-	p.lock.Lock()
 
 	if p.hashInput.Input != nil {
-		ch := make(chan *convent)
-		var input []EF.Container
-		input = append(input, p.hashInput)
-		input = append(input, twice)
-		ok := make(chan bool)
-		go func() {
-			<-ok
-			close(ch)
-		}()
-		go func() {
-			for i := range rd.PipeTwice(DBnumber, input) {
-				a := p.convent.constructor()
-				a.value = i
-
-				ch <- &a
-
-			}
-			ok <- true
-		}()
-
-		defer p.lock.Unlock()
-		return ch
+		return p.pipeTWiceHelper(DBnumber, p.hashInput, twice)
 	}
 	if p.setInput.Input != nil {
-
-		ch := make(chan *convent)
-		var input []EF.Container
-		input = append(input, p.setInput)
-		input = append(input, twice)
-		ok := make(chan bool)
-		go func() {
-			for i := range rd.PipeTwice(DBnumber, input) {
-				a := p.convent.constructor()
-				a.value = i
-				ch <- &a
-
-			}
-			ok <- true
-		}()
-		go func() {
-			<-ok
-			close(ch)
-		}()
-		defer p.lock.Unlock()
-		return ch
+		return p.pipeTWiceHelper(DBnumber, p.setInput, twice)
 	}
-
 	if p.listInput.Input != nil {
-
-		ch := make(chan *convent)
-		ok := make(chan bool)
-		var input []EF.Container
-		input = append(input, p.listInput)
-		input = append(input, twice)
-
-		go func() {
-			for i := range rd.PipeTwice(DBnumber, input) {
-				a := p.convent.constructor()
-				a.value = i
-				ch <- &a
-
-			}
-			ok <- true
-		}()
-		go func() {
-			<-ok
-			close(ch)
-		}()
-		defer p.lock.Unlock()
-		return ch
-
+		return p.pipeTWiceHelper(DBnumber, p.listInput, twice)
 	}
-
 	if p.keyInput.Input != nil {
-		ch := make(chan *convent)
-		var input []EF.Container
-		input = append(input, p.keyInput)
-		input = append(input, twice)
-		ok := make(chan bool)
-		go func() {
-			for i := range rd.PipeTwice(DBnumber, input) {
-				a := p.convent.constructor()
-				a.value = i
-				ch <- &a
-
-			}
-			ok <- true
-		}()
-		go func() {
-			<-ok
-			close(ch)
-		}()
-		defer p.lock.Unlock()
-		return ch
-
+		return p.pipeTWiceHelper(DBnumber, p.keyInput, twice)
 	}
 	a := p.convent.constructor()
 	a.value = nil
 	ch1 := make(chan *convent)
 	ch1 <- &a
 
-	defer p.lock.Unlock()
 	return ch1
 }
+
+////////
 
 type convent struct {
 	lock  sync.Mutex
@@ -242,7 +90,7 @@ func (p *convent) Int64() (int64, error) {
 	case error:
 		return 0, p.value.(error)
 	default:
-		return 0, errors.New("type == nuknown   ,Value conving err")
+		return 0, errors.New("type == unknown   ,Value conving err")
 	}
 
 }
@@ -264,7 +112,7 @@ func (p *convent) Int64ToString() (string, error) {
 	case error:
 		return "", p.value.(error)
 	default:
-		return "", errors.New("type == nuknown   ,Value conving err")
+		return "", errors.New("type == unknown  ,Value conving err")
 	}
 
 }
@@ -285,7 +133,7 @@ func (p *convent) Value() (interface{}, error) {
 		return nil, p.value.(error)
 
 	default:
-		return "", errors.New("type == nuknown   ,Value conving err")
+		return "", errors.New("type == unknown   ,Value conving err")
 	}
 
 }
@@ -295,7 +143,7 @@ func (p *convent) ByteArray() ([]byte, error) {
 	defer p.lock.Unlock()
 	data, ok := p.value.([]byte)
 	if !ok {
-		return nil, errors.New("type == nuknown  ,Value conving err")
+		return nil, errors.New("type == unknown  ,Value conving err")
 	}
 	return data, nil
 }
@@ -316,7 +164,7 @@ func (p *convent) ToString() (string, error) {
 	case error:
 		return "", p.value.(error)
 	default:
-		return "", errors.New("type == nuknown   ,Value conving err")
+		return "", errors.New("type == unknown   ,Value conving err")
 	}
 
 }
@@ -337,7 +185,7 @@ func (p *convent) ByteTostring() (string, error) {
 	case error:
 		return "", p.value.(error)
 	default:
-		return "", errors.New("type == nuknown   ,Value conving err")
+		return "", errors.New("type == unknown   ,Value conving err")
 	}
 
 }

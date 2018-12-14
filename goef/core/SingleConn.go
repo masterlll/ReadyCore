@@ -13,13 +13,14 @@ type RedisConnModel struct {
 	RedisHelper
 }
 
+// 設定類
 func (red *RedisConnModel) TcpMode() {
-	red.RedisConn.ConnType = tcp
+	red.RedisConn.connType = tcp
 }
 func (red *RedisConnModel) HostSet(Host, password string) {
 
-	red.RedisConn.ProxyAddress = Host // host
-	red.RedisConn.PassWord = password // 密碼
+	red.RedisConn.proxyAddress = Host // host
+	red.RedisConn.passWord = password // 密碼
 
 	red.RedisHelper.Hash.mode = single // 設定 help mode ..
 	red.RedisHelper.List.mode = single
@@ -27,25 +28,24 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 	red.RedisHelper.Key.mode = single
 	red.RedisHelper.Other.mode = single
 	red.RedisHelper.Queue.mode = single
-
 }
 
 func (red *RedisConnModel) MaxConnSet(MaxIdle, MaxActive int) {
-	red.RedisConn.MaxActive = MaxActive
-	red.RedisConn.MaxIdle = MaxIdle
+	red.RedisConn.maxActive = MaxActive
+	red.RedisConn.maxIdle = MaxIdle
 }
 func (red *RedisConnModel) TimeoutSet(Connect, Read, Write, Idleint int) {
-	red.RedisConn.WriteTimeout = Write
-	red.RedisConn.ConnectTimeout = Connect
-	red.RedisConn.ReadTimeout = Read
-	red.RedisConn.IdleTimeout = Idleint
+	red.RedisConn.writeTimeout = Write
+	red.RedisConn.connectTimeout = Connect
+	red.RedisConn.readTimeout = Read
+	red.RedisConn.idleTimeout = Idleint
 
 }
 func (red *RedisConnModel) Wait(wait bool) {
-	red.RedisConn.Wait = wait
+	red.RedisConn.wait = wait
 }
 func (red *RedisConnModel) DBnumberSet(Total int) {
-	red.RedisConn.DBnumber = Total
+	red.RedisConn.dBnumber = Total
 }
 func (red *RedisConnModel) Auth(start bool) {
 	red.RedisConn.auth = start
@@ -62,7 +62,7 @@ func (red *RedisConnModel) Default(Host, password string) {
 }
 
 func (red *RedisConnModel) Ping() bool {
-	c := connmap[red.RedisConn.connKey][red.RedisConn.DBnumber].Get()
+	c := connmap[red.RedisConn.connKey][red.RedisConn.dBnumber].Get()
 	_, err := c.Do("PING")
 	if err != nil {
 		fmt.Println(err)
@@ -71,9 +71,11 @@ func (red *RedisConnModel) Ping() bool {
 	return true
 }
 
+/// 連線類 方法///
+
 // 開始連線
 func (red *RedisConnModel) RedisConning() error {
-	conn, err := red.connPool(red.RedisConn.DBnumber)
+	conn, err := red.connPool(red.RedisConn.dBnumber)
 	if err != nil {
 		return err
 	}
@@ -90,14 +92,16 @@ func (red *RedisConnModel) RedisConning() error {
 	return nil
 }
 
+/// 建立連線
 func (red *RedisConnModel) connPool(i int) (Connpool []*redis.Pool, err error) {
 	b := i
 	for b <= i {
 		conn := newPool(red.RedisConn, b) /////設定連線
+
 		err = conn.TestOnBorrow(conn.Get(), time.Now())
 		if err != nil {
 			fmt.Println(err)
-			return
+			return nil, err
 		}
 		Connpool = append(Connpool, &conn)
 		b++
@@ -105,28 +109,26 @@ func (red *RedisConnModel) connPool(i int) (Connpool []*redis.Pool, err error) {
 	return
 }
 
-func connGet(key string, dbnumber int) redis.Conn {
-	return connmap[key][dbnumber].Get()
-}
-
 func newPool(cf RedisConn, number int) redis.Pool {
 
 	a := redis.Pool{
-		MaxIdle:   cf.MaxIdle,
-		MaxActive: cf.MaxActive, // max number of connections
+		MaxIdle:     cf.maxIdle,
+		MaxActive:   cf.maxActive,                                // max number of connections
+		IdleTimeout: time.Duration(cf.idleTimeout) * time.Second, // 閒置連線逾時
+		Wait:        cf.wait,
 
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(cf.ConnType, cf.ProxyAddress,
-				redis.DialConnectTimeout(time.Duration(cf.ConnectTimeout)*time.Millisecond),
-				redis.DialReadTimeout(time.Duration(cf.ReadTimeout)*time.Millisecond),
-				redis.DialWriteTimeout(time.Duration(cf.WriteTimeout)*time.Millisecond),
+			c, err := redis.Dial(cf.connType, cf.proxyAddress,
+				redis.DialConnectTimeout(time.Duration(cf.connectTimeout)*time.Millisecond),
+				redis.DialReadTimeout(time.Duration(cf.readTimeout)*time.Millisecond),
+				redis.DialWriteTimeout(time.Duration(cf.writeTimeout)*time.Millisecond),
 			)
 			if err != nil {
 				panic(err.Error())
 			}
 			if cf.auth {
-				if !authCheck(c, cf.PassWord) {
-					return c, errors.New("Auth err password ?")
+				if !authCheck(c, cf.passWord) {
+					return nil, errors.New("Auth err ! password ok ?  or Auth still trun off ! ")
 				} // 驗證
 			}
 			if _, err := c.Do("SELECT", number); err != nil { /// 選資料庫
@@ -142,8 +144,6 @@ func newPool(cf RedisConn, number int) redis.Pool {
 			_, err := c.Do("PING")
 			return err
 		},
-		IdleTimeout: 3 * time.Second, // 閒置連線逾時
-		Wait:        true,
 	}
 
 	return a

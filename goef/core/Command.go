@@ -6,23 +6,6 @@ import (
 	EF "github.com/ReadyCore/goef/other"
 )
 
-type RedisConn struct {
-	ProxyAddress   string // host
-	PassWord       string // 密碼
-	connKey        string // 連結KEY
-	MaxIdle        int    // 最大閒置連線
-	MaxActive      int    // 最大連線
-	ConnType       string //連線 模式 TCP ..
-	IdleTimeout    int    // 閒置連線逾時
-	ConnectTimeout int    //連線  Timeout
-	ReadTimeout    int    //讀取 Timeout
-	WriteTimeout   int    //寫入 Timeout
-	DBnumber       int    // DB　總數
-	Mode           string // 集群 or 一般
-	Wait           bool   //等待
-	auth           bool   //密碼驗證
-
-}
 type RedisHelper struct {
 	Hash  Hash
 	List  List
@@ -36,7 +19,6 @@ type Hash struct {
 	work     work
 	mode     string
 	connkey  string
-	//ConnPool []*redis.Pool
 }
 
 func (r *Hash) input(Action string, in []interface{}) *work {
@@ -88,8 +70,7 @@ type Set struct {
 	mode     string
 	DBnumber int
 	connkey  string
-	//ConnPool []*redis.Pool
-	lock sync.Mutex
+	lock     sync.Mutex
 }
 
 func (r *Set) input(Action string, in []interface{}) *work {
@@ -147,9 +128,8 @@ func (r *Set) SSCAN(table string, key string) *work {
 type List struct {
 	work     work
 	DBnumber int
-	//	ConnPool []*redis.Pool
-	connkey string
-	mode    string
+	connkey  string
+	mode     string
 }
 
 func (r *List) input(Action string, in []interface{}) *work {
@@ -183,9 +163,8 @@ func (r *List) LLEN(table string) *work {
 type Key struct {
 	work     work
 	DBnumber int
-	//ConnPool []*redis.Pool
-	connkey string
-	mode    string
+	connkey  string
+	mode     string
 }
 
 func (r *Key) input(Action string, in []interface{}) *work {
@@ -210,9 +189,8 @@ func (r *Key) EXPIRE(table string, time int) *work {
 type Other struct {
 	work     work
 	DBnumber int
-	//	ConnPool []*redis.Pool
-	connkey string
-	mode    string
+	connkey  string
+	mode     string
 }
 
 func (r *Other) input(Action string, in []interface{}) *work {
@@ -238,7 +216,7 @@ type Queue struct {
 }
 
 func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
-	rd := DbContext{}
+	rd := dbContext{}
 	ch := make(chan *convent)
 	ok := make(chan bool)
 	go func() {

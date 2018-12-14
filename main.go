@@ -25,7 +25,7 @@ func main() {
 	var aa []ef.Container
 	for i := 1; i <= 1000000; i++ {
 		//p.Hash.HSET("ffd", strconv.Itoa(i)+"cdcc", "ssss").Pipe(0)
-		aa = append(aa, p.Hash.HSET("ffd", strconv.Itoa(i)+"cdcc", "ssss").Value())
+		aa = append(aa, p.Hash.HSET("f123156d", strconv.Itoa(i)+"cdcc", "ssss").Value())
 	}
 	fmt.Println("go")
 	for m := range p.Queue.QueuePipe(0, aa) {
