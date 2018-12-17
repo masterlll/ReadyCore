@@ -1,9 +1,5 @@
 package RedigoEFcore
 
-import (
-	EF "github.com/ReadyCore/goef/other"
-)
-
 func (p *work) doHelper(dbnumber int) *convent {
 	rd := dbContext{}
 	a := p.convent.constructor()
@@ -60,24 +56,23 @@ func (p *work) pipeHelper(dbnumber int) *convent {
 	return &a
 }
 
-func (p *work) pipeTWiceHelper(DBnumber int, in, twice EF.Container) chan *convent {
+func (p *work) pipeTWiceHelper(DBnumber int, in, twice Container) chan *convent {
 	rd := dbContext{}
 	ch := make(chan *convent)
-	input := []EF.Container{in, twice}
-	ok := make(chan bool)
-
+	input := []Container{in, twice}
+	OK := make(chan bool)
 	go func() {
 		for i := range rd.PipeTwice(p.connKey, p.Mode, DBnumber, input) {
 			a := p.convent.constructor()
 			a.value = i
 			ch <- &a
 		}
-		ok <- true
+		OK <- true
 	}()
 	go func() {
-		<-ok
+		<-OK
 		close(ch)
-		close(ok)
+		close(OK)
 	}()
 	return ch
 }

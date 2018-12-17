@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 
-	EF "github.com/ReadyCore/goef/other"
+
 )
 
 type dbContext struct {
@@ -13,7 +13,7 @@ type dbContext struct {
 	ClusterMode
 }
 
-func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...EF.Container) chan interface{} {
+func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...Container) chan interface{} {
 
 	switch Mode {
 	case single:
@@ -29,7 +29,7 @@ func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...EF.C
 	return nil
 }
 
-func (red *dbContext) DO(key string, Mode string, DBnumber int, in EF.Container) chan interface{} {
+func (red *dbContext) DO(key string, Mode string, DBnumber int, in Container) chan interface{} {
 
 	switch Mode {
 	case single:
@@ -46,7 +46,7 @@ func (red *dbContext) DO(key string, Mode string, DBnumber int, in EF.Container)
 
 }
 
-func (red *dbContext) PipeTwice(key string, Mode string, DBnumber int, input []EF.Container) chan interface{} {
+func (red *dbContext) PipeTwice(key string, Mode string, DBnumber int, input []Container) chan interface{} {
 
 	switch Mode {
 	case single:

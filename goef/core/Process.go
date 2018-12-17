@@ -3,19 +3,17 @@ package RedigoEFcore
 import (
 	"fmt"
 
-	EF "github.com/ReadyCore/goef/other"
 	"github.com/gomodule/redigo/redis"
-	//"github.com/gomodule/redigo/redis"
 )
 
 type RedisMode struct {
 }
 
-func (S *RedisMode) pipe(Conn redis.Conn, input ...EF.Container) chan interface{} {
+func (S *RedisMode) pipe(Conn redis.Conn, input ...Container) chan interface{} {
 
 	data := make(chan interface{})
 	ok := make(chan bool)
-	go func(input []EF.Container, C redis.Conn) {
+	go func(input []Container, C redis.Conn) {
 		for _, p := range input {
 			err2 := C.Send(p.Action, p.Input...)
 			if err2 != nil {
@@ -42,12 +40,13 @@ func (S *RedisMode) pipe(Conn redis.Conn, input ...EF.Container) chan interface{
 		Conn.Close()
 		close(data)
 		close(ok)
+		fmt.Println("pipe close ")
 
 	}()
 	return data
 }
 
-func (S *RedisMode) do(Conn redis.Conn, In EF.Container) chan interface{} {
+func (S *RedisMode) do(Conn redis.Conn, In Container) chan interface{} {
 
 	DO := make(chan interface{})
 	res, err := Conn.Do(In.Action, In.Input...)
@@ -59,33 +58,33 @@ func (S *RedisMode) do(Conn redis.Conn, In EF.Container) chan interface{} {
 		DO <- res
 		Conn.Close()
 		close(DO)
+		fmt.Println("DO close ")
 	}()
 	return DO
 }
-func (S *RedisMode) pipetwice(Conn redis.Conn, input []EF.Container) chan interface{} {
+func (S *RedisMode) pipetwice(Conn redis.Conn, input []Container) chan interface{} {
 
 	data := make(chan interface{})
 	ok := make(chan bool)
 
-	go func(input []EF.Container) {
-		err := Conn.Send(input[0].Action, input[0].Input...)
-		if err != nil {
-			fmt.Println("redis  failed:", err)
-		}
-		err2 := Conn.Send(input[1].Action, input[1].Input...)
-		if err2 != nil {
-			fmt.Println("redis  failed:", err2)
+	go func(input []Container) {
+		for _, i := range input {
+			err := Conn.Send(i.Action, i.Input...)
+			if err != nil {
+				fmt.Println("redis  failed:", err)
+				data <- err
+			}
 		}
 		if err := Conn.Flush(); err != nil { // 清空記憶體　發送
 			fmt.Println("err :", err)
 		}
-		for i := 1; i <= len(input); i++ {
-			re, err := Conn.Receive()
-			if err != nil {
-				fmt.Println("redis  failed:", err)
-			}
-			data <- re
+		re, err := Conn.Receive()
+		if err != nil {
+			fmt.Println("redis  failed:", err)
+			data <- err
 		}
+		data <- re
+		fmt.Println("aa")
 		ok <- true
 	}(input)
 
@@ -93,7 +92,8 @@ func (S *RedisMode) pipetwice(Conn redis.Conn, input []EF.Container) chan interf
 		<-ok
 		Conn.Close()
 		close(data)
-
+		close(ok)
+		fmt.Println("closer")
 	}()
 	return data
 }
@@ -101,7 +101,7 @@ func (S *RedisMode) pipetwice(Conn redis.Conn, input []EF.Container) chan interf
 type ClusterMode struct {
 }
 
-func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...EF.Container) chan interface{} {
+func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...Container) chan interface{} {
 	data := make(chan interface{})
 	//ok := make(chan redis.Conn)
 	ok := make(chan bool)
@@ -109,14 +109,14 @@ func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...EF.Container) chan i
 		<-ok
 		Conn.Close()
 
-	   //fmt.Print("conn and chan close")
+		//fmt.Print("conn and chan close")
 		close(ok)
 		//	fmt.Print("conn and chan close 1")
 		close(data)
 		//	close(data)
 		fmt.Print("conn and chan close")
 	}()
-	go func(c redis.Conn, input []EF.Container) {
+	go func(c redis.Conn, input []Container) {
 
 		for _, p := range input {
 			err2 := c.Send(p.Action, p.Input...)
@@ -147,7 +147,7 @@ func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...EF.Container) chan i
 	return data
 }
 
-func (S *ClusterMode) doCluster(Conn redis.Conn, In EF.Container) chan interface{} {
+func (S *ClusterMode) doCluster(Conn redis.Conn, In Container) chan interface{} {
 	DO := make(chan interface{})
 	var value interface{}
 	res, err := Conn.Do(In.Action, In.Input...)

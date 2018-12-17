@@ -283,7 +283,7 @@ type Queue struct {
 	lock    sync.Mutex
 }
 
-func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
+func (p *Queue) QueuePipe(DBnumber int, twice []Container) chan *convent {
 	rd := dbContext{}
 	ch := make(chan *convent)
 	ok := make(chan bool)

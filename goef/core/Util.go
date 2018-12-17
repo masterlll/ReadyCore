@@ -61,6 +61,14 @@ type ClusterConn struct { ///  集群 設定
 }
 
 
+type Container struct { // 容器
+	Action string
+	DB     int
+	Input  []interface{}
+	Twice  []interface{}
+}
+
+
 // 初始化 
 func init() {
 	connmap = make(map[string][]*redis.Pool)

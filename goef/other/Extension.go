@@ -1,11 +1,5 @@
 package RedigoEFcore
 
-type Container struct {
-	Action string
-	DB     int
-	Input  []interface{}
-	Twice  []interface{}
-}
 
 func MergeValue(com interface{}, table interface{}, key interface{}, val ...interface{}) ([]interface{}, bool) {
 

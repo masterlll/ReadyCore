@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"sync"
-	EF "github.com/ReadyCore/goef/other"
+
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -13,19 +13,19 @@ type work struct {
 	lock       sync.Mutex
 	Mode       string
 	connKey    string
-	value      EF.Container
-	hashInput  EF.Container
-	setInput   EF.Container
-	listInput  EF.Container
-	keyInput   EF.Container
-	otherInput EF.Container
+	value      Container
+	hashInput  Container
+	setInput   Container
+	listInput  Container
+	keyInput   Container
+	otherInput Container
 }
 
 func (p *work) constructor() *work {
 	return &work{}
 }
 
-func (p *work) Value() EF.Container {
+func (p *work) Value() Container {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	return p.value
@@ -39,7 +39,7 @@ func (p *work) Pipe(DBnumber int) *convent {
 	return p.pipeHelper(DBnumber)
 }
 
-func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
+func (p *work) PipeTWice(DBnumber int, twice Container) chan *convent {
 
 	if p.hashInput.Input != nil {
 		return p.pipeTWiceHelper(DBnumber, p.hashInput, twice)
