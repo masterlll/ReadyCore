@@ -1,12 +1,6 @@
 package RedigoEFcore
 
-import (
-	//"fmt"
-
-	"fmt"
-
-
-)
+//"fmt"
 
 type dbContext struct {
 	RedisMode
@@ -22,7 +16,7 @@ func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...Cont
 		}
 	case Cluster:
 		{
-		
+
 			return red.pipeCluster(clusterconnGet(connkey), in...)
 		}
 	}
@@ -57,19 +51,12 @@ func (red *dbContext) PipeTwice(key string, Mode string, DBnumber int, input []C
 	case Cluster:
 		{
 			ch := make(chan interface{})
-			ok := make(chan bool)
 			go func() {
-				for i := range ok {
-					fmt.Println("channel  send status ", i)
+				for _, in := range input {
+					ch <- red.doCluster(clusterconnGet(key), in)
 				}
 				close(ch)
-				fmt.Println("ch close ")
 			}()
-			for _, in := range input {
-				ch = red.doCluster(clusterconnGet(key), in)
-			}
-			ok <- true
-
 			return ch
 		}
 	}

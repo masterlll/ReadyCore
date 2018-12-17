@@ -60,7 +60,7 @@ func (p *work) PipeTWice(DBnumber int, twice Container) chan *convent {
 	return ch1
 }
 
-////////  convent 結構設定
+//  convent 結構設定
 
 type convent struct {
 	lock  sync.Mutex
