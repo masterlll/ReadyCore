@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strconv"
 	"sync"
-
 	EF "github.com/ReadyCore/goef/other"
 	"github.com/gomodule/redigo/redis"
 )
@@ -39,6 +38,7 @@ func (p *work) DO(DBnumber int) *convent {
 func (p *work) Pipe(DBnumber int) *convent {
 	return p.pipeHelper(DBnumber)
 }
+
 func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 
 	if p.hashInput.Input != nil {
@@ -57,11 +57,10 @@ func (p *work) PipeTWice(DBnumber int, twice EF.Container) chan *convent {
 	a.value = nil
 	ch1 := make(chan *convent)
 	ch1 <- &a
-
 	return ch1
 }
 
-////////
+////////  convent 結構設定
 
 type convent struct {
 	lock  sync.Mutex

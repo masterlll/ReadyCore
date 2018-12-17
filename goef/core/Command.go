@@ -1,19 +1,20 @@
 package RedigoEFcore
 
 import (
+	"fmt"
 	"sync"
 
 	EF "github.com/ReadyCore/goef/other"
 )
 
-type RedisHelper struct {
-	Hash  Hash
-	List  List
-	Set   Set
-	Key   Key
-	Other Other
-	Queue Queue
-}
+// type RedisHelper struct {
+// 	Hash  Hash
+// 	List  List
+// 	Set   Set
+// 	Key   Key
+// 	Other Other
+// 	Queue Queue
+// }
 type Hash struct {
 	DBnumber int
 	work     work
@@ -44,6 +45,10 @@ func (r *Hash) HGETALL(table string) *work {
 	input, _ := EF.MergeValue("HGETALL", table, nil, nil)
 	return r.input("HGETALL", input)
 }
+func (r *Hash) HVALS(table string) *work {
+	input, _ := EF.MergeValue("HVALS", table, nil, nil)
+	return r.input("HVALS", input)
+}
 
 func (r *Hash) HDEL(table string, key string) *work {
 
@@ -62,6 +67,14 @@ func (r *Hash) HSET(table string, key string, value ...interface{}) *work {
 	input, _ := EF.MergeValue("HSET", table, key, value...)
 
 	return r.input("HSET", input)
+
+}
+
+func (r *Hash) HLEN(table string) *work {
+
+	input, _ := EF.MergeValue("HLEN", table, nil, nil)
+
+	return r.input("HLEN", input)
 
 }
 
@@ -90,12 +103,22 @@ func (r *Set) SADD(table string, value ...interface{}) *work {
 	return r.input("SADD", input)
 
 }
+func (r *Set) SREM(table string, value ...interface{}) *work {
+	input, _ := EF.MergeValue("SREM", table, nil, value...)
+	return r.input("SREM", input)
+
+}
 
 func (r *Set) SCARD(table string, key string) *work {
 
 	input, _ := EF.MergeValue("SCARD", table, key, nil)
 	return r.input("SCARD", input)
 
+}
+
+func (r *Set) SPOP(Key string) *work {
+	input, _ := EF.MergeValue("SPOP", Key, nil, nil)
+	return r.input("SPOP", input)
 }
 
 func (r *Set) SDIFF(table string, key string) *work {
@@ -151,6 +174,21 @@ func (r *List) LPUSH(table string, value interface{}) *work {
 	input, _ := EF.MergeValue("LPUSH", table, value, nil)
 	return r.input("LPUSH", input)
 }
+func (r *List) RPUSH(table string, value ...interface{}) *work {
+
+	input, _ := EF.MergeValue("RPUSH", table, nil, value...)
+	return r.input("RPUSH", input)
+}
+
+func (r *List) LPOP(table string) *work {
+	input, _ := EF.MergeValue("LPOP", table, nil, nil)
+	return r.input("LPOP", input)
+}
+func (r *List) RPOP(table string) *work {
+	input, _ := EF.MergeValue("RPOP", table, nil, nil)
+	return r.input("RPOP", input)
+}
+
 func (r *List) LINDEX(table string, index string) *work {
 	input, _ := EF.MergeValue("LINDEX", table, index, nil)
 	return r.input("LINDEX", input)
@@ -177,13 +215,43 @@ func (r *Key) input(Action string, in []interface{}) *work {
 
 	return wo
 }
+
+func (r *Key) SET(table string, Value string) *work {
+	input, _ := EF.MergeValue("SET", table, Value, nil)
+	return r.input("SET", input)
+}
 func (r *Key) DEL(table string) *work {
 	input, _ := EF.MergeValue("DEL", table, nil, nil)
 	return r.input("DEL", input)
 }
+
+func (r *Key) INCRBY(table string, number int) *work {
+	input, _ := EF.MergeValue("INCRBY", table, number, nil)
+	return r.input("INCRBY", input)
+}
 func (r *Key) EXPIRE(table string, time int) *work {
 	input, _ := EF.MergeValue("EXPIRE", table, nil, time)
 	return r.input("EXPIRE", input)
+}
+func (r *Key) EXISTS(key string) *work {
+	input, _ := EF.MergeValue("EXISTS", key, nil, nil)
+	return r.input("EXISTS", input)
+}
+
+func (r *Key) GET(table string) *work {
+	input, _ := EF.MergeValue("GET", table, nil, nil)
+	return r.input("GET", input)
+}
+
+func (r *Key) GETSET(table string, number int) *work {
+	input, _ := EF.MergeValue("GETSET", number, nil, nil)
+
+	return r.input("GETSET", input)
+}
+
+func (r *Key) DECRBY(table string, number int) *work {
+	input, _ := EF.MergeValue("DECRBY", table, number, nil)
+	return r.input("DECRBY", input)
 }
 
 type Other struct {
@@ -219,10 +287,14 @@ func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
 	rd := dbContext{}
 	ch := make(chan *convent)
 	ok := make(chan bool)
+
 	go func() {
-		<-ok
-		close(ch)
+		for o := range ok {
+			fmt.Println(o)
+			close(ch)
+		}
 	}()
+
 	go func() {
 		for i := range rd.Pipe(p.connkey, p.mode, DBnumber, twice...) {
 			a := p.convent.constructor()
@@ -230,6 +302,16 @@ func (p *Queue) QueuePipe(DBnumber int, twice []EF.Container) chan *convent {
 			ch <- &a
 		}
 		ok <- true
+		close(ok)
+
 	}()
+
 	return ch
 }
+
+// if p.hashInput.Input != nil {
+// 	for i := range rd.Pipe(p.connKey, p.Mode, dbnumber, p.hashInput) {
+// 		a.value = i
+// 	}
+// 	return &a
+// }

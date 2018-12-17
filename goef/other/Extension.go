@@ -30,7 +30,7 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 		return urls, true
 	}
 	//table (key)  VALUE1  VALUE1
-	if com == "SADD" || com == "SREM" || com == "LPUSH" || com == "RPUSH" || com == "SREM" {
+	if com == "SADD" || com == "SREM" || com == "LPUSH" || com == "RPUSH"{
 		//fmt.Println(" key  VALUE1  VALUE1 ")
 		urls = append(urls, table)
 		for _, i := range val {
@@ -73,7 +73,7 @@ func MergeValue(com interface{}, table interface{}, key interface{}, val ...inte
 		return urls, true
 	}
 	// tables
-	if com == "HGETALL" || com == "SMEMBERS" || com == "DEL" || com == "LLEN" || com == "RPOP" || com == "LPOP" || com == "GET" || com == "EXISTS" || com == "HLEN" || com == "HKEYS" || com == "SPOP" || com == "SCARD" || com == "HVALS" {
+	if com == "HGETALL" || com == "SMEMBERS" || com == "DEL" || com == "LLEN" || com == "RPOP" || com == "LPOP" || com == "GET" || com == "EXISTS" || com == "HLEN" || com == "HKEYS" || com == "SPOP" || com == "SCARD" || com == "HVALS"{
 		//	fmt.Println("table ")
 		urls = append(urls, table)
 

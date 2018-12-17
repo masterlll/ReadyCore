@@ -1,6 +1,10 @@
 package RedigoEFcore
 
 import (
+	//"fmt"
+
+	"fmt"
+
 	EF "github.com/ReadyCore/goef/other"
 )
 
@@ -18,6 +22,7 @@ func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...EF.C
 		}
 	case Cluster:
 		{
+		
 			return red.pipeCluster(clusterconnGet(connkey), in...)
 		}
 	}
@@ -51,7 +56,21 @@ func (red *dbContext) PipeTwice(key string, Mode string, DBnumber int, input []E
 		}
 	case Cluster:
 		{
-			return red.pipetwiceCluster(clusterconnGet(key), input)
+			ch := make(chan interface{})
+			ok := make(chan bool)
+			go func() {
+				for i := range ok {
+					fmt.Println("channel  send status ", i)
+				}
+				close(ch)
+				fmt.Println("ch close ")
+			}()
+			for _, in := range input {
+				ch = red.doCluster(clusterconnGet(key), in)
+			}
+			ok <- true
+
+			return ch
 		}
 	}
 	return nil

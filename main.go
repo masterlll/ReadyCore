@@ -11,40 +11,70 @@ import (
 
 func main() {
 
+	Cluster()
+}
+
+func Defeault() {
+
 	p := db.RedisConnModel{}
 	p.Default("127.0.0.1:6379", "")
 	p.Auth(false)
 	p.RedisConning()
-
 	fmt.Println(p.Ping(), "ping ")
-
 	//fmt.Println(p.Hash.HSET("ffd", "bb", "ss").DO(0).Int64ToString())
-
-	t1 := time.Now() // get current time
-
 	var aa []ef.Container
 	for i := 1; i <= 1000000; i++ {
-		//p.Hash.HSET("ffd", strconv.Itoa(i)+"cdcc", "ssss").Pipe(0)
 		aa = append(aa, p.Hash.HSET("f123156d", strconv.Itoa(i)+"cdcc", "ssss").Value())
 	}
+	t1 := time.Now() // get current time
 	fmt.Println("go")
 	for m := range p.Queue.QueuePipe(0, aa) {
 		m = m
 	}
-	// for i := 1; i <= 10000; i++ {
-	// 	go p.Hash.HSET("ffd", strconv.Itoa(i)+"ccc", "ssss").Pipe(0)
-	// }
 	fmt.Println("App elapsed: ", time.Since(t1))
-	// if err := rd.Shared().InitRedis(); err != nil {
-	// 	fmt.Println("err", err)
+}
+
+func Cluster() {
+	p := db.ClusterConnModel{}
+	p.Default([]string{"192.168.6.85:7000", "192.168.6.85:7001", "192.168.6.85:7002", "192.168.6.85:7003", "192.168.6.85:7004", "192.168.6.85:7005"}, "12345678")
+	//	p.Auth(false)
+	p.ClusterConning()
+	fmt.Println(p.Ping(), "ping ?")
+
+	// data := p.Hash.HSET("aaa", "aa", "aaa").DO(0)
+	// fmt.Println(data)
+	// data2 := p.Hash.HSET("bb", "bb", "bb").Pipe(0)
+	// fmt.Println(data2)
+	// in := p.Hash.HSET("cc", "cc", "cc").Value()
+	// for v := range p.Hash.HSET("vv", "vv", "v").PipeTWice(0, in) {
+	// 	fmt.Println(v, "asadsa")
 	// }
-	// db := Core.Redis{}
-	// fmt.Println(db.Hash.HSET("AAAA", "AAAA", "123456789").Pipe(13).Value())
-	// fmt.Println(db.Hash.HGET("AAAA", "AAAA").Pipe(13).Value())
-	// fmt.Println(db.Hash.HEXISTS("AAAA", "AAAA").Pipe(13).Value())
-	// fmt.Println(db.Hash.HSET("s", "s", "s").DO(13).Value())
-	// fmt.Println(db.Hash.HGET("s", "s").DO(13).Value())
-	// fmt.Println(db.Hash.HEXISTS("s", "s").DO(13).Value())
+	go func() {
+		var aa []ef.Container
+		for i := 1; i <= 1000; i++ {
+			aa = append(aa, p.Hash.HSET("f123106d", strconv.Itoa(i)+"cdcc", "ssss").Value())
+		}
+		t1 := time.Now()
+		fmt.Println("go")
+		for m := range p.Queue.QueuePipe(0, aa) {
+			m = m
+		}
+		fmt.Println("App elapsed: ", time.Since(t1))
+		time.Sleep(time.Millisecond * 100) //資源要關乾淨
+	}()
+
+	var aa []ef.Container
+	for i := 1; i <= 1000; i++ {
+		aa = append(aa, p.Hash.HSET("f123156d", strconv.Itoa(i)+"cdcc", "ssss").Value())
+	}
+	t1 := time.Now()
+	fmt.Println("go")
+	for m := range p.Queue.QueuePipe(0, aa) {
+		m = m
+	}
+	fmt.Println("App elapsed: ", time.Since(t1))
+	time.Sleep(time.Millisecond * 100) //資源要關乾淨
+
 }
 
 // func test() {

@@ -10,7 +10,13 @@ import (
 
 type RedisConnModel struct {
 	RedisConn RedisConn
-	RedisHelper
+	//RedisHelper
+	Hash  Hash
+	List  List
+	Set   Set
+	Key   Key
+	Other Other
+	Queue Queue
 }
 
 // 設定類
@@ -22,12 +28,12 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 	red.RedisConn.proxyAddress = Host // host
 	red.RedisConn.passWord = password // 密碼
 
-	red.RedisHelper.Hash.mode = single // 設定 help mode ..
-	red.RedisHelper.List.mode = single
-	red.RedisHelper.Set.mode = single
-	red.RedisHelper.Key.mode = single
-	red.RedisHelper.Other.mode = single
-	red.RedisHelper.Queue.mode = single
+	red.Hash.mode = single // 設定 help mode ..
+	red.List.mode = single
+	red.Set.mode = single
+	red.Key.mode = single
+	red.Other.mode = single
+	red.Queue.mode = single
 }
 
 func (red *RedisConnModel) MaxConnSet(MaxIdle, MaxActive int) {
@@ -83,12 +89,12 @@ func (red *RedisConnModel) RedisConning() error {
 	uuid := connkey() // 配連線Key   connkey
 	connmap[uuid] = conn
 	red.RedisConn.connKey = uuid
-	red.RedisHelper.Hash.connkey = uuid
-	red.RedisHelper.List.connkey = uuid
-	red.RedisHelper.Set.connkey = uuid
-	red.RedisHelper.Key.connkey = uuid
-	red.RedisHelper.Other.connkey = uuid
-	red.RedisHelper.Queue.connkey = uuid
+	red.Hash.connkey = uuid
+	red.List.connkey = uuid
+	red.Set.connkey = uuid
+	red.Key.connkey = uuid
+	red.Other.connkey = uuid
+	red.Queue.connkey = uuid
 	return nil
 }
 

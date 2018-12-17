@@ -11,7 +11,13 @@ import (
 
 type ClusterConnModel struct {
 	ClusterConn ClusterConn
-	RedisHelper
+	//RedisHelper
+	Hash  Hash
+	List  List
+	Set   Set
+	Key   Key
+	Other Other
+	Queue Queue
 }
 
 // 設定類
@@ -22,12 +28,12 @@ func (red *ClusterConnModel) HostSet(Hosts []string, password string) {
 
 	red.ClusterConn.proxyAddress = Hosts // host
 	red.ClusterConn.passWord = password  // 密碼
-	red.RedisHelper.Hash.mode = Cluster // 設定 help mode ..
-	red.RedisHelper.List.mode = Cluster
-	red.RedisHelper.Set.mode = Cluster
-	red.RedisHelper.Key.mode = Cluster
-	red.RedisHelper.Other.mode = Cluster
-	red.RedisHelper.Queue.mode = Cluster
+	red.Hash.mode = Cluster // 設定 help mode ..
+	red.List.mode = Cluster
+	red.Set.mode = Cluster
+	red.Key.mode = Cluster
+	red.Other.mode = Cluster
+	red.Queue.mode = Cluster
 }
 
 func (red *ClusterConnModel) MaxConnSet(MaxIdle, MaxActive int) {
@@ -80,12 +86,12 @@ func (red *ClusterConnModel) ClusterConning() error {
 	clusterConnMap[uuid] = conn
 
 	red.ClusterConn.connKey = uuid
-	red.RedisHelper.Hash.connkey = uuid
-	red.RedisHelper.List.connkey = uuid
-	red.RedisHelper.Set.connkey = uuid
-	red.RedisHelper.Key.connkey = uuid
-	red.RedisHelper.Other.connkey = uuid
-	red.RedisHelper.Queue.connkey = uuid
+	red.Hash.connkey = uuid
+	red.List.connkey = uuid
+	red.Set.connkey = uuid
+	red.Key.connkey = uuid
+	red.Other.connkey = uuid
+	red.Queue.connkey = uuid
 	return nil
 }
 

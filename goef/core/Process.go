@@ -42,6 +42,7 @@ func (S *RedisMode) pipe(Conn redis.Conn, input ...EF.Container) chan interface{
 		Conn.Close()
 		close(data)
 		close(ok)
+
 	}()
 	return data
 }
@@ -102,7 +103,19 @@ type ClusterMode struct {
 
 func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...EF.Container) chan interface{} {
 	data := make(chan interface{})
-	ok := make(chan redis.Conn)
+	//ok := make(chan redis.Conn)
+	ok := make(chan bool)
+	go func() {
+		<-ok
+		Conn.Close()
+
+	   //fmt.Print("conn and chan close")
+		close(ok)
+		//	fmt.Print("conn and chan close 1")
+		close(data)
+		//	close(data)
+		fmt.Print("conn and chan close")
+	}()
 	go func(c redis.Conn, input []EF.Container) {
 
 		for _, p := range input {
@@ -125,14 +138,12 @@ func (S *ClusterMode) pipeCluster(Conn redis.Conn, input ...EF.Container) chan i
 			}
 			data <- re
 		}
-		ok <- c
-		close(ok)
+
+		ok <- true
+		fmt.Print("ok close")
+		//time.Sleep(time.Millisecond * 1000)
 	}(Conn, input)
-	go func() {
-		c := <-ok
-		c.Close()
-		close(data)
-	}()
+
 	return data
 }
 
@@ -150,47 +161,21 @@ func (S *ClusterMode) doCluster(Conn redis.Conn, In EF.Container) chan interface
 		DO <- value
 		Conn.Close()
 		close(DO)
+		fmt.Print("conn and chan close")
 	}()
 	return DO
 }
-func (S *ClusterMode) pipetwiceCluster(Conn redis.Conn, input []EF.Container) chan interface{} {
 
-	data := make(chan interface{})
-	ok := make(chan redis.Conn)
-
-	go func(c redis.Conn, input []EF.Container) {
-		for _, v := range input {
-			err := c.Send(v.Action, v.Input...)
-			if err != nil {
-				fmt.Println(err, v.Action+" pipetwice().send")
-				data <- err
-			}
-		}
-		if err := c.Flush(); err != nil { // 清空記憶體　發送
-			fmt.Println(err, " pipetwice().Flush")
-			data <- err
-		}
-		for i := 1; i <= len(input); i++ {
-			re, err := c.Receive()
-			if err != nil {
-				fmt.Println(err, "pipetwice().Receive")
-				data <- err
-			}
-			data <- re
-		}
-		ok <- Conn
-		close(ok)
-	}(Conn, input)
-
-	go func() {
-		for c := range ok {
-			c.Close()
-		}
-		close(data)
-
-	}()
-	return data
-}
+// 	go func() {
+// 		for c := range ok {
+// 			c.Close()
+// 			fmt.Print("conn close")
+// 		}
+// 		close(data)
+// 		fmt.Print("chan close")
+// 	}()
+// 	return data
+// }
 
 // func (S *ClusterMode) do(DB int, In EF.Container) chan interface{} {
 // 	fmt.Println("  cluster  do ")
