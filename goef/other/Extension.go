@@ -2,9 +2,7 @@ package RedigoEFcore
 
 
 func MergeValue(com interface{}, table interface{}, key interface{}, val ...interface{}) ([]interface{}, bool) {
-
 	var urls []interface{}
-
 	// table , key ,key
 	if com == "HMGET" {
 		//fmt.Println(" table , key ,key")

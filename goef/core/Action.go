@@ -16,7 +16,6 @@ func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...Cont
 		}
 	case Cluster:
 		{
-
 			return red.pipeCluster(clusterconnGet(connkey), in...)
 		}
 	}
@@ -24,7 +23,6 @@ func (red *dbContext) Pipe(connkey string, Mode string, DBnumber int, in ...Cont
 }
 
 func (red *dbContext) DO(key string, Mode string, DBnumber int, in Container) chan interface{} {
-
 	switch Mode {
 	case single:
 		{
@@ -41,12 +39,10 @@ func (red *dbContext) DO(key string, Mode string, DBnumber int, in Container) ch
 }
 
 func (red *dbContext) PipeTwice(key string, Mode string, DBnumber int, input []Container) chan interface{} {
-
 	switch Mode {
 	case single:
 		{
 			return red.pipetwice(connGet(key, DBnumber), input)
-
 		}
 	case Cluster:
 		{
