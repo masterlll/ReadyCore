@@ -9,18 +9,18 @@ import (
 )
 
 func main() {
-	//	Defeault()
-	Cluster()
+	Defeault()
+	//Cluster()
 
 }
 
 func Defeault() {
 
-	p := db.RedisConnModel{}
-	p.Default("127.0.0.1:6379", "")
-	p.Auth(false)
-	p.RedisConning()
-	fmt.Println(p.Ping(), "ping ")
+	a := db.RedisConnModel{}
+	a.Default("127.0.0.1:6379", "")
+	a.Auth(false)
+	p, _ := a.RedisConning()
+	fmt.Println(a.Ping(), "ping ")
 	/////////////////////////////
 	// // Do
 	data := p.Hash.HSET("aaa", "aa", "aaa").DO(0)
@@ -63,11 +63,14 @@ func Defeault() {
 }
 
 func Cluster() {
-	p := db.ClusterConnModel{}
-	p.Default([]string{"192.168.6.85:7000", "192.168.6.85:7001", "192.168.6.85:7002", "192.168.6.85:7003", "192.168.6.85:7004", "192.168.6.85:7005"}, "12345678")
+	a := db.ClusterConnModel{}
+	a.Default([]string{"127.0.0.1:7000", "127.0.0.1.85:7001", "127.0.0.1:7002", "127.0.0.1:7003", "127.0.0.1:7004", "127.0.0.1:7005"}, "12345678")
 	//	p.Auth(false)
-	p.ClusterConning()
-	fmt.Println(p.Ping(), "ping ?")
+
+	
+	p, _ := a.ClusterConning()
+	fmt.Println(a.Ping(), "ping ?")
+
 
 	data := p.Hash.HSET("aaa", "aa", "aaa").DO(0)
 	fmt.Println(data)

@@ -12,12 +12,12 @@ import (
 type ClusterConnModel struct {
 	ClusterConn ClusterConn
 	//RedisHelper
-	Hash  Hash
-	List  List
-	Set   Set
-	Key   Key
-	Other Other
-	Queue Queue
+	// Hash  Hash
+	// List  List
+	// Set   Set
+	// Key   Key
+	// Other Other
+	// Queue Queue
 }
 
 // 設定類
@@ -28,12 +28,7 @@ func (red *ClusterConnModel) HostSet(Hosts []string, password string) {
 
 	red.ClusterConn.proxyAddress = Hosts // host
 	red.ClusterConn.passWord = password  // 密碼
-	red.Hash.mode = Cluster // 設定 help mode ..
-	red.List.mode = Cluster
-	red.Set.mode = Cluster
-	red.Key.mode = Cluster
-	red.Other.mode = Cluster
-	red.Queue.mode = Cluster
+
 }
 
 func (red *ClusterConnModel) MaxConnSet(MaxIdle, MaxActive int) {
@@ -74,25 +69,66 @@ func (red *ClusterConnModel) Ping() bool {
 
 // 連線類
 
-// 開始連線
+ //// 配新實體　
+func (red *ClusterConnModel) NewEnity() (*CEnity, error) {
+	if red.ClusterConn.connKey == "" {
+		return nil, errors.New("redis not Conning or miss ConnKey ! ")
+	}
+	if !red.Ping() {
+		return nil, errors.New("redis  ping  err ! ")
+	}
 
-func (red *ClusterConnModel) ClusterConning() error {
+	Enity := CEnity{}
+	Enity.Hash.mode = Cluster // 設定 help mode ..
+	Enity.List.mode = Cluster
+	Enity.Set.mode = Cluster
+	Enity.Key.mode = Cluster
+	Enity.Other.mode = Cluster
+	Enity.Queue.mode = Cluster
+
+	
+	//// 配　連線　ｉｄ
+
+	Enity.Hash.connkey = red.ClusterConn.connKey
+	Enity.List.connkey = red.ClusterConn.connKey
+	Enity.Set.connkey = red.ClusterConn.connKey
+	Enity.Key.connkey = red.ClusterConn.connKey
+	Enity.Other.connkey = red.ClusterConn.connKey
+	Enity.Queue.connkey = red.ClusterConn.connKey
+
+	return &Enity, nil
+
+}
+
+func (red *ClusterConnModel) ClusterConning() (*CEnity, error) {
 	conn, err := red.clusterPool()
 	if err != nil {
-		return err
+		return nil, err
 	}
+	
 
 	uuid := connkey() // 配連線Key   connkey
 	clusterConnMap[uuid] = conn
 
+	Enity := CEnity{}
+	Enity.Hash.mode = Cluster // 設定 help mode ..
+	Enity.List.mode = Cluster
+	Enity.Set.mode = Cluster
+	Enity.Key.mode = Cluster
+	Enity.Other.mode = Cluster
+	Enity.Queue.mode = Cluster
+	//// 配　連線　ｉｄ
+	
 	red.ClusterConn.connKey = uuid
-	red.Hash.connkey = uuid
-	red.List.connkey = uuid
-	red.Set.connkey = uuid
-	red.Key.connkey = uuid
-	red.Other.connkey = uuid
-	red.Queue.connkey = uuid
-	return nil
+	Enity.Hash.connkey = uuid
+	Enity.List.connkey = uuid
+	Enity.Set.connkey = uuid
+	Enity.Key.connkey = uuid
+	Enity.Other.connkey = uuid
+	Enity.Queue.connkey = uuid
+	
+	return &Enity, nil
+
 }
 
 // 建立 集群連線
@@ -115,7 +151,7 @@ func (red *ClusterConnModel) clustorPoolBuild(addr string, opts ...redis.DialOpt
 	return &redis.Pool{
 		MaxIdle:     red.ClusterConn.maxIdle,
 		MaxActive:   red.ClusterConn.maxActive,
-		IdleTimeout: time.Duration(red.ClusterConn.idleTimeout )* time.Second, // 閒置連線逾時
+		IdleTimeout: time.Duration(red.ClusterConn.idleTimeout) * time.Second, // 閒置連線逾時
 		Wait:        red.ClusterConn.wait,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial(red.ClusterConn.connType, addr, opts...)

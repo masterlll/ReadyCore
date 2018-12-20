@@ -10,13 +10,6 @@ import (
 
 type RedisConnModel struct {
 	RedisConn RedisConn
-	//RedisHelper
-	Hash  Hash
-	List  List
-	Set   Set
-	Key   Key
-	Other Other
-	Queue Queue
 }
 
 // 設定類
@@ -27,13 +20,6 @@ func (red *RedisConnModel) HostSet(Host, password string) {
 
 	red.RedisConn.proxyAddress = Host // host
 	red.RedisConn.passWord = password // 密碼
-
-	red.Hash.mode = single // 設定 help mode ..
-	red.List.mode = single
-	red.Set.mode = single
-	red.Key.mode = single
-	red.Other.mode = single
-	red.Queue.mode = single
 }
 
 func (red *RedisConnModel) MaxConnSet(MaxIdle, MaxActive int) {
@@ -78,24 +64,62 @@ func (red *RedisConnModel) Ping() bool {
 }
 
 /// 連線類 方法///
+//配新實體
+func (red *RedisConnModel) NewEnity() (*Enity, error) {
+	if red.RedisConn.connKey == "" {
+		return nil, errors.New("redis not Conning or miss ConnKey ! ")
+	}
+	if !red.Ping() {
+		return nil, errors.New("redis  ping  err ! ")
+	}
+
+	Enity := Enity{}
+	Enity.Hash.mode = single // 設定 help mode ..
+	Enity.List.mode = single
+	Enity.Set.mode = single
+	Enity.Key.mode = single
+	Enity.Other.mode = single
+	Enity.Queue.mode = single
+	//// 配　連線　ｉｄ
+
+	Enity.Hash.connkey = red.RedisConn.connKey
+	Enity.List.connkey = red.RedisConn.connKey
+	Enity.Set.connkey = red.RedisConn.connKey
+	Enity.Key.connkey = red.RedisConn.connKey
+	Enity.Other.connkey = red.RedisConn.connKey
+	Enity.Queue.connkey = red.RedisConn.connKey
+
+	return &Enity, nil
+
+}
 
 // 開始連線
-func (red *RedisConnModel) RedisConning() error {
+func (red *RedisConnModel) RedisConning() (*Enity, error) {
 	conn, err := red.connPool(red.RedisConn.dBnumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	uuid := connkey() // 配連線Key   connkey
 	connmap[uuid] = conn
+	Enity := Enity{}
+	Enity.Hash.mode = single // 設定 help mode ..
+	Enity.List.mode = single
+	Enity.Set.mode = single
+	Enity.Key.mode = single
+	Enity.Other.mode = single
+	Enity.Queue.mode = single
+	//// 配　連線　ｉｄ
 	red.RedisConn.connKey = uuid
-	red.Hash.connkey = uuid
-	red.List.connkey = uuid
-	red.Set.connkey = uuid
-	red.Key.connkey = uuid
-	red.Other.connkey = uuid
-	red.Queue.connkey = uuid
-	return nil
+
+	Enity.Hash.connkey = uuid
+	Enity.List.connkey = uuid
+	Enity.Set.connkey = uuid
+	Enity.Key.connkey = uuid
+	Enity.Other.connkey = uuid
+	Enity.Queue.connkey = uuid
+
+	return &Enity, nil
 }
 
 /// 建立連線
