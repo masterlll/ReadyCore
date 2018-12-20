@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	db "github.com/ReadyCore/goef/core"
+	db "github.com/ReadyCore"
 )
 
 func main() {
@@ -67,10 +67,8 @@ func Cluster() {
 	a.Default([]string{"127.0.0.1:7000", "127.0.0.1.85:7001", "127.0.0.1:7002", "127.0.0.1:7003", "127.0.0.1:7004", "127.0.0.1:7005"}, "12345678")
 	//	p.Auth(false)
 
-	
 	p, _ := a.ClusterConning()
 	fmt.Println(a.Ping(), "ping ?")
-
 
 	data := p.Hash.HSET("aaa", "aa", "aaa").DO(0)
 	fmt.Println(data)
