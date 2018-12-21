@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	EF "github.com/ReadyCore/goef/other"
+	EF "github.com/masterlll/ReadyCore/goef/other"
 )
 
 // type RedisHelper struct {
