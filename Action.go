@@ -1,6 +1,5 @@
-package RedigoEFcore
+package ReadyCore
 
-//"fmt"
 
 type dbContext struct {
 	RedisMode

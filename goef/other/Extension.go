@@ -1,4 +1,4 @@
-package RedigoEFcore
+package other
 
 
 func MergeValue(com interface{}, table interface{}, key interface{}, val ...interface{}) ([]interface{}, bool) {
