@@ -1,4 +1,4 @@
-package RedigoEFcore
+package ReadyCore
 
 func (p *work) doHelper(dbnumber int) *convent {
 	rd := dbContext{}

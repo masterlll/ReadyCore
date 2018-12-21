@@ -1,4 +1,4 @@
-package RedigoEFcore
+package ReadyCore
 
 import (
 	"fmt"
