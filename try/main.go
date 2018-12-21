@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	db "github.com/ReadyCore"
+	db "github.com/masterlll/ReadyCore"
 )
 
 func main() {
